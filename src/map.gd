@@ -39,12 +39,15 @@ func new_collapse_step(
 	constrained_neighbors: Array,
 	constrain_type: ConstrainType = ConstrainType.IMPLICIT_COLLAPSE
 ) -> Dictionary:
+	var constrained_neighbor_positions = []
+	for neighbor in constrained_neighbors:
+		constrained_neighbor_positions.append(neighbor.position)
 	return {
 		"type":                  constrain_type,
 		"slot":                  slot.position,
 		"collapsed_to":          slot.get_possibilities(),
 		"remaining_proto":       slot.get_possibilities(true),
-		"constrained_neighbors": constrained_neighbors
+		"constrained_neighbors": constrained_neighbor_positions
 	}
 
 
@@ -57,18 +60,21 @@ func new_constrain_step(
 	for p in slot.get_last_possibilities():
 		if p not in slot.get_possibilities():
 			removed.append(p)
+	var constrained_neighbor_positions = []
+	for neighbor in constrained_neighbors:
+		constrained_neighbor_positions.append(neighbor.position)
 	return {
 		"type":                  constrain_type,
 		"slot":                  slot.position,
 		"removed_proto":         removed,
 		"remaining_proto":       slot.get_possibilities(),
-		"constrained_neighbors": constrained_neighbors
+		"constrained_neighbors": constrained_neighbor_positions
 	}
 
 
 func _process(_delta):
-	if overcollapsed:
-		return
+#	if overcollapsed:
+#		return
 
 	if undoing:
 		while undoing:
@@ -82,7 +88,14 @@ func _process(_delta):
 
 	for i in range(10):
 		if len(constrained_slots_stack) > 0:
-			propagate(constrained_slots_stack.pop_front())
+			var constrained = constrained_slots_stack.pop_front()
+			var constrained_neighbors = propagate(constrained)
+			for neighbor in constrained_neighbors:
+				constrained_slots_stack.push_front(neighbor)
+			if constrained.is_collapsed:
+				history.append(new_collapse_step(constrained, constrained_neighbors, ConstrainType.IMPLICIT_COLLAPSE))
+			else:
+				history.append(new_constrain_step(constrained, constrained_neighbors, ConstrainType.IMPLICIT_CONSTRAIN))
 		elif auto_collapsing:
 			_on_collapse_lowest_entropy_pressed()
 
@@ -205,6 +218,7 @@ func propagate(constrained_slot: Area3D): # , constrain_type: ConstrainType = Co
 				):
 					new_neighbor_possibilities.append(neighbor_possibility)
 		if len(new_neighbor_possibilities) != len(neighbor.get_possibilities()):
+			constrained_neighbors.append(neighbor)
 			if len(new_neighbor_possibilities) == 0:
 				neighbor.overconstrained()
 				auto_collapsing = false
@@ -212,7 +226,6 @@ func propagate(constrained_slot: Area3D): # , constrain_type: ConstrainType = Co
 			else:
 				neighbor.constrain(new_neighbor_possibilities)
 				constrained_neighbors.append(neighbor)
-				constrained_slots_stack.append(neighbor)
 
 	# TODO - Handle history outside of propagate
 #	var history_entry
@@ -296,8 +309,10 @@ func _on_select_lowest_entropy_pressed() -> bool:
 func _on_collapse_selected_pressed():
 	if currently_selected != null:
 		currently_selected.collapse()
-		var constrained = propagate(currently_selected)
-		constrained_slots_stack.append_array(constrained)
+		var constrained_neighbors = propagate(currently_selected)
+		for neighbor in constrained_neighbors:
+			constrained_slots_stack.push_front(neighbor)
+		history.append(new_collapse_step(currently_selected, constrained_neighbors, ConstrainType.EXPLICIT_COLLAPSE))
 		# TODO - handle history for all propagation steps
 #		while not constrained.is_empty():
 #			var neighbor = constrained.pop_front()
@@ -326,4 +341,5 @@ func set_auto_collapse(button_pressed):
 
 
 func _on_undo_pressed():
+	overcollapsed = false
 	undoing = true
