@@ -36,34 +36,42 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
-[node name="Controls" type="VBoxContainer" parent="Container"]
-custom_minimum_size = Vector2(600, 2.08165e-12)
+[node name="VBoxContainer" type="VBoxContainer" parent="Container"]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
 
-[node name="ToggleMargins" type="MarginContainer" parent="Container/Controls"]
-custom_minimum_size = Vector2(350, 150)
+[node name="TabContainer" type="TabContainer" parent="Container/VBoxContainer"]
+custom_minimum_size = Vector2(475, 2.08165e-12)
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 6
+size_flags_vertical = 3
 
-[node name="Toggles" type="VBoxContainer" parent="Container/Controls/ToggleMargins"]
+[node name="Setup" type="VBoxContainer" parent="Container/VBoxContainer/TabContainer"]
 visible = false
 layout_mode = 2
+
+[node name="Collapse" type="MarginContainer" parent="Container/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="Collapse" type="VBoxContainer" parent="Container/VBoxContainer/TabContainer/Collapse"]
+custom_minimum_size = Vector2(400, 950)
+layout_mode = 2
+size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="ZSelect" type="HBoxContainer" parent="Container/Controls/ToggleMargins/Toggles"]
+[node name="Toggles" type="VBoxContainer" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse"]
 layout_mode = 2
 size_flags_vertical = 4
 
-[node name="Label" type="Label" parent="Container/Controls/ToggleMargins/Toggles/ZSelect"]
+[node name="ZSelect" type="HBoxContainer" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles"]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Label" type="Label" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/ZSelect"]
 layout_mode = 2
 size_flags_horizontal = 2
 text = "Z
 "
 
-[node name="Z" type="HSlider" parent="Container/Controls/ToggleMargins/Toggles/ZSelect"]
+[node name="Z" type="HSlider" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/ZSelect"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -71,109 +79,137 @@ size_flags_vertical = 4
 focus_mode = 1
 rounded = true
 
-[node name="Value" type="Label" parent="Container/Controls/ToggleMargins/Toggles/ZSelect"]
+[node name="Value" type="Label" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/ZSelect"]
 layout_mode = 2
 size_flags_horizontal = 10
 text = "0"
 
-[node name="PreviewSpin" type="HBoxContainer" parent="Container/Controls/ToggleMargins/Toggles"]
+[node name="PreviewSpin" type="HBoxContainer" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles"]
+visible = false
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Container/Controls/ToggleMargins/Toggles/PreviewSpin"]
+[node name="Label" type="Label" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/PreviewSpin"]
 layout_mode = 2
 text = "Spin Previews"
 
-[node name="CheckButton" type="CheckButton" parent="Container/Controls/ToggleMargins/Toggles/PreviewSpin"]
+[node name="CheckButton" type="CheckButton" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/PreviewSpin"]
 layout_mode = 2
 size_flags_horizontal = 10
 
-[node name="ShowAxes" type="HBoxContainer" parent="Container/Controls/ToggleMargins/Toggles"]
+[node name="ShowAxes" type="HBoxContainer" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles"]
 layout_mode = 2
 size_flags_vertical = 0
 
-[node name="Label" type="Label" parent="Container/Controls/ToggleMargins/Toggles/ShowAxes"]
+[node name="Label" type="Label" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/ShowAxes"]
 layout_mode = 2
 text = "Show Axes"
 
-[node name="CheckButton" type="CheckButton" parent="Container/Controls/ToggleMargins/Toggles/ShowAxes"]
+[node name="CheckButton" type="CheckButton" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/ShowAxes"]
 layout_mode = 2
 size_flags_horizontal = 10
 button_pressed = true
 
-[node name="ShowZGrid" type="HBoxContainer" parent="Container/Controls/ToggleMargins/Toggles"]
+[node name="ShowZGrid" type="HBoxContainer" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles"]
+visible = false
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Container/Controls/ToggleMargins/Toggles/ShowZGrid"]
+[node name="Label" type="Label" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/ShowZGrid"]
 layout_mode = 2
 text = "Show Z Grid"
 
-[node name="CheckButton" type="CheckButton" parent="Container/Controls/ToggleMargins/Toggles/ShowZGrid"]
+[node name="CheckButton" type="CheckButton" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/ShowZGrid"]
 layout_mode = 2
 size_flags_horizontal = 10
 
+[node name="SelectNext" type="Button" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+text = "Select Lowest Entropy"
+
+[node name="CollapseSelected" type="Button" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+text = "Collapse Selected"
+
+[node name="CollapseRandom" type="Button" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse"]
+visible = false
+layout_mode = 2
+text = "Collapse Lowest Entropy"
+
+[node name="CustomConstraints" type="Button" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse"]
+layout_mode = 2
+text = "Apply Custom Constraints"
+
+[node name="Platform" type="Button" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse"]
+layout_mode = 2
+text = "Start With Central Platform"
+
+[node name="AutoCollapse" type="HBoxContainer" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/AutoCollapse"]
+layout_mode = 2
+text = "Auto Collapse"
+
+[node name="CheckButton" type="CheckButton" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/AutoCollapse"]
+layout_mode = 2
+size_flags_horizontal = 10
+
+[node name="Platforms" type="HBoxContainer" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse"]
+visible = false
+layout_mode = 2
+
+[node name="LineEdit" type="LineEdit" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Platforms"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Platforms"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Platforms/VBoxContainer"]
+layout_mode = 2
+theme = SubResource("Theme_gsuh2")
+text = "⏶"
+
+[node name="Button2" type="Button" parent="Container/VBoxContainer/TabContainer/Collapse/Collapse/Platforms/VBoxContainer"]
+layout_mode = 2
+theme = SubResource("Theme_cp5w2")
+text = "⏷"
+
+[node name="Export" type="VBoxContainer" parent="Container/VBoxContainer/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="ResetButton" type="Button" parent="Container/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 8
+text = "RESET
+"
+
+[node name="Controls" type="VBoxContainer" parent="Container"]
+visible = false
+custom_minimum_size = Vector2(475, 2.08165e-12)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="ToggleMargins" type="MarginContainer" parent="Container/Controls"]
+visible = false
+custom_minimum_size = Vector2(350, 100)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+
 [node name="ButtonsMargins" type="MarginContainer" parent="Container/Controls"]
+visible = false
 custom_minimum_size = Vector2(450, 300)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 6
 
-[node name="Buttons" type="VBoxContainer" parent="Container/Controls/ButtonsMargins"]
-layout_mode = 2
-size_flags_vertical = 4
-
-[node name="SelectNext" type="Button" parent="Container/Controls/ButtonsMargins/Buttons"]
-layout_mode = 2
-size_flags_vertical = 4
-text = "Select Lowest Entropy"
-
-[node name="CollapseSelected" type="Button" parent="Container/Controls/ButtonsMargins/Buttons"]
-layout_mode = 2
-size_flags_vertical = 4
-text = "Collapse Selected"
-
-[node name="CollapseRandom" type="Button" parent="Container/Controls/ButtonsMargins/Buttons"]
-layout_mode = 2
-text = "Collapse Lowest Entropy"
-
-[node name="AutoCollapse" type="HBoxContainer" parent="Container/Controls/ButtonsMargins/Buttons"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Container/Controls/ButtonsMargins/Buttons/AutoCollapse"]
-layout_mode = 2
-text = "Auto Collapse"
-
-[node name="CheckButton" type="CheckButton" parent="Container/Controls/ButtonsMargins/Buttons/AutoCollapse"]
-layout_mode = 2
-size_flags_horizontal = 10
-
-[node name="CustomConstraints" type="Button" parent="Container/Controls/ButtonsMargins/Buttons"]
-layout_mode = 2
-text = "Apply Custom Constraints"
-
-[node name="Platform" type="Button" parent="Container/Controls/ButtonsMargins/Buttons"]
-layout_mode = 2
-text = "Start With Central Platform"
-
-[node name="Platforms" type="HBoxContainer" parent="Container/Controls/ButtonsMargins/Buttons"]
-layout_mode = 2
-
-[node name="LineEdit" type="LineEdit" parent="Container/Controls/ButtonsMargins/Buttons/Platforms"]
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Container/Controls/ButtonsMargins/Buttons/Platforms"]
-layout_mode = 2
-
-[node name="Button" type="Button" parent="Container/Controls/ButtonsMargins/Buttons/Platforms/VBoxContainer"]
-layout_mode = 2
-theme = SubResource("Theme_gsuh2")
-text = "⏶"
-
-[node name="Button2" type="Button" parent="Container/Controls/ButtonsMargins/Buttons/Platforms/VBoxContainer"]
-layout_mode = 2
-theme = SubResource("Theme_cp5w2")
-text = "⏷"
-
 [node name="ConsoleMargins" type="MarginContainer" parent="Container/Controls"]
+visible = false
 custom_minimum_size = Vector2(450, 250)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -193,21 +229,27 @@ offset_bottom = 350.0
 theme = SubResource("Theme_xjb7h")
 text = "(Logs coming soon)"
 
+[node name="ColorRect" type="ColorRect" parent="Container/Controls"]
+visible = false
+custom_minimum_size = Vector2(475, 475)
+layout_mode = 2
+color = Color(0.447059, 0.447059, 0.447059, 1)
+
 [node name="Map" parent="Container" instance=ExtResource("1_4d4x7")]
 layout_mode = 2
 size_flags_horizontal = 8
 
 [node name="Options" type="TabContainer" parent="Container"]
-custom_minimum_size = Vector2(500, 100)
+custom_minimum_size = Vector2(360, 2.08165e-12)
 layout_mode = 2
 
 [node name="Proto Selector" type="ScrollContainer" parent="Container/Options"]
 clip_contents = false
-custom_minimum_size = Vector2(512, 2.08165e-12)
+custom_minimum_size = Vector2(256, 2.08165e-12)
 layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Container/Options/Proto Selector"]
-custom_minimum_size = Vector2(512, 2.08165e-12)
+custom_minimum_size = Vector2(360, 2.08165e-12)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 512
@@ -235,15 +277,15 @@ text = "<  undo"
 layout_mode = 2
 text = "redo  >"
 
-[connection signal="value_changed" from="Container/Controls/ToggleMargins/Toggles/ZSelect/Z" to="." method="_on_z_level_changed"]
-[connection signal="toggled" from="Container/Controls/ToggleMargins/Toggles/PreviewSpin/CheckButton" to="." method="_on_check_button_toggled"]
-[connection signal="toggled" from="Container/Controls/ToggleMargins/Toggles/ShowAxes/CheckButton" to="Container/Map" method="toggle_axes"]
-[connection signal="toggled" from="Container/Controls/ToggleMargins/Toggles/ShowZGrid/CheckButton" to="Container/Map" method="toggle_zgrid"]
-[connection signal="pressed" from="Container/Controls/ButtonsMargins/Buttons/SelectNext" to="Container/Map" method="_on_select_lowest_entropy_pressed"]
-[connection signal="pressed" from="Container/Controls/ButtonsMargins/Buttons/CollapseSelected" to="Container/Map" method="_on_collapse_selected_pressed"]
-[connection signal="pressed" from="Container/Controls/ButtonsMargins/Buttons/CollapseRandom" to="Container/Map" method="_on_collapse_lowest_entropy_pressed"]
-[connection signal="toggled" from="Container/Controls/ButtonsMargins/Buttons/AutoCollapse/CheckButton" to="." method="_on_auto_collapse_toggled"]
-[connection signal="pressed" from="Container/Controls/ButtonsMargins/Buttons/CustomConstraints" to="." method="_on_top_constraint_pressed"]
-[connection signal="pressed" from="Container/Controls/ButtonsMargins/Buttons/Platform" to="." method="_on_center_platform_pressed"]
+[connection signal="value_changed" from="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/ZSelect/Z" to="." method="_on_z_level_changed"]
+[connection signal="toggled" from="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/PreviewSpin/CheckButton" to="." method="_on_check_button_toggled"]
+[connection signal="toggled" from="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/ShowAxes/CheckButton" to="Container/Map" method="toggle_axes"]
+[connection signal="toggled" from="Container/VBoxContainer/TabContainer/Collapse/Collapse/Toggles/ShowZGrid/CheckButton" to="Container/Map" method="toggle_zgrid"]
+[connection signal="pressed" from="Container/VBoxContainer/TabContainer/Collapse/Collapse/SelectNext" to="Container/Map" method="_on_select_lowest_entropy_pressed"]
+[connection signal="pressed" from="Container/VBoxContainer/TabContainer/Collapse/Collapse/CollapseSelected" to="Container/Map" method="_on_collapse_selected_pressed"]
+[connection signal="pressed" from="Container/VBoxContainer/TabContainer/Collapse/Collapse/CollapseRandom" to="Container/Map" method="_on_collapse_lowest_entropy_pressed"]
+[connection signal="pressed" from="Container/VBoxContainer/TabContainer/Collapse/Collapse/CustomConstraints" to="." method="_on_top_constraint_pressed"]
+[connection signal="pressed" from="Container/VBoxContainer/TabContainer/Collapse/Collapse/Platform" to="." method="_on_center_platform_pressed"]
+[connection signal="toggled" from="Container/VBoxContainer/TabContainer/Collapse/Collapse/AutoCollapse/CheckButton" to="." method="_on_auto_collapse_toggled"]
 [connection signal="slot_selected" from="Container/Map" to="." method="_on_map_slot_selected"]
 [connection signal="pressed" from="Container/Options/History/VBoxContainer/HBoxContainer/Undo" to="Container/Map" method="_on_undo_pressed"]
