@@ -1,0 +1,249 @@
+[gd_scene load_steps=7 format=3 uid="uid://bhq4ww1a6q37r"]
+
+[ext_resource type="PackedScene" uid="uid://dkj8wu5cotccu" path="res://scenes/Map.tscn" id="1_4d4x7"]
+[ext_resource type="Script" path="res://src/main.gd" id="1_47xb3"]
+
+[sub_resource type="Theme" id="Theme_gsuh2"]
+default_font_size = 10
+
+[sub_resource type="Theme" id="Theme_cp5w2"]
+default_font_size = 10
+
+[sub_resource type="SystemFont" id="SystemFont_ob788"]
+
+[sub_resource type="Theme" id="Theme_xjb7h"]
+default_font = SubResource("SystemFont_ob788")
+default_font_size = 18
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_47xb3")
+
+[node name="Container" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Controls" type="VBoxContainer" parent="Container"]
+custom_minimum_size = Vector2(600, 2.08165e-12)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="ToggleMargins" type="MarginContainer" parent="Container/Controls"]
+custom_minimum_size = Vector2(350, 150)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+
+[node name="Toggles" type="VBoxContainer" parent="Container/Controls/ToggleMargins"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="ZSelect" type="HBoxContainer" parent="Container/Controls/ToggleMargins/Toggles"]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Label" type="Label" parent="Container/Controls/ToggleMargins/Toggles/ZSelect"]
+layout_mode = 2
+size_flags_horizontal = 2
+text = "Z
+"
+
+[node name="Z" type="HSlider" parent="Container/Controls/ToggleMargins/Toggles/ZSelect"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+focus_mode = 1
+rounded = true
+
+[node name="Value" type="Label" parent="Container/Controls/ToggleMargins/Toggles/ZSelect"]
+layout_mode = 2
+size_flags_horizontal = 10
+text = "0"
+
+[node name="PreviewSpin" type="HBoxContainer" parent="Container/Controls/ToggleMargins/Toggles"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container/Controls/ToggleMargins/Toggles/PreviewSpin"]
+layout_mode = 2
+text = "Spin Previews"
+
+[node name="CheckButton" type="CheckButton" parent="Container/Controls/ToggleMargins/Toggles/PreviewSpin"]
+layout_mode = 2
+size_flags_horizontal = 10
+
+[node name="ShowAxes" type="HBoxContainer" parent="Container/Controls/ToggleMargins/Toggles"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="Label" type="Label" parent="Container/Controls/ToggleMargins/Toggles/ShowAxes"]
+layout_mode = 2
+text = "Show Axes"
+
+[node name="CheckButton" type="CheckButton" parent="Container/Controls/ToggleMargins/Toggles/ShowAxes"]
+layout_mode = 2
+size_flags_horizontal = 10
+button_pressed = true
+
+[node name="ShowZGrid" type="HBoxContainer" parent="Container/Controls/ToggleMargins/Toggles"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container/Controls/ToggleMargins/Toggles/ShowZGrid"]
+layout_mode = 2
+text = "Show Z Grid"
+
+[node name="CheckButton" type="CheckButton" parent="Container/Controls/ToggleMargins/Toggles/ShowZGrid"]
+layout_mode = 2
+size_flags_horizontal = 10
+
+[node name="ButtonsMargins" type="MarginContainer" parent="Container/Controls"]
+custom_minimum_size = Vector2(450, 300)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+
+[node name="Buttons" type="VBoxContainer" parent="Container/Controls/ButtonsMargins"]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="SelectNext" type="Button" parent="Container/Controls/ButtonsMargins/Buttons"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "Select Lowest Entropy"
+
+[node name="CollapseSelected" type="Button" parent="Container/Controls/ButtonsMargins/Buttons"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "Collapse Selected"
+
+[node name="CollapseRandom" type="Button" parent="Container/Controls/ButtonsMargins/Buttons"]
+layout_mode = 2
+text = "Collapse Lowest Entropy"
+
+[node name="AutoCollapse" type="HBoxContainer" parent="Container/Controls/ButtonsMargins/Buttons"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container/Controls/ButtonsMargins/Buttons/AutoCollapse"]
+layout_mode = 2
+text = "Auto Collapse"
+
+[node name="CheckButton" type="CheckButton" parent="Container/Controls/ButtonsMargins/Buttons/AutoCollapse"]
+layout_mode = 2
+size_flags_horizontal = 10
+
+[node name="CustomConstraints" type="Button" parent="Container/Controls/ButtonsMargins/Buttons"]
+layout_mode = 2
+text = "Apply Custom Constraints"
+
+[node name="Platform" type="Button" parent="Container/Controls/ButtonsMargins/Buttons"]
+layout_mode = 2
+text = "Start With Central Platform"
+
+[node name="Platforms" type="HBoxContainer" parent="Container/Controls/ButtonsMargins/Buttons"]
+layout_mode = 2
+
+[node name="LineEdit" type="LineEdit" parent="Container/Controls/ButtonsMargins/Buttons/Platforms"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/Controls/ButtonsMargins/Buttons/Platforms"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="Container/Controls/ButtonsMargins/Buttons/Platforms/VBoxContainer"]
+layout_mode = 2
+theme = SubResource("Theme_gsuh2")
+text = "⏶"
+
+[node name="Button2" type="Button" parent="Container/Controls/ButtonsMargins/Buttons/Platforms/VBoxContainer"]
+layout_mode = 2
+theme = SubResource("Theme_cp5w2")
+text = "⏷"
+
+[node name="ConsoleMargins" type="MarginContainer" parent="Container/Controls"]
+custom_minimum_size = Vector2(450, 250)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="ConsoleBackground" type="ColorRect" parent="Container/Controls/ConsoleMargins"]
+custom_minimum_size = Vector2(350, 350)
+layout_mode = 2
+size_flags_vertical = 10
+color = Color(0, 0, 0, 1)
+
+[node name="Console" type="RichTextLabel" parent="Container/Controls/ConsoleMargins/ConsoleBackground"]
+custom_minimum_size = Vector2(0, 250)
+layout_mode = 2
+offset_right = 600.0
+offset_bottom = 350.0
+theme = SubResource("Theme_xjb7h")
+text = "(Logs coming soon)"
+
+[node name="Map" parent="Container" instance=ExtResource("1_4d4x7")]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="Options" type="TabContainer" parent="Container"]
+custom_minimum_size = Vector2(500, 100)
+layout_mode = 2
+
+[node name="Proto Selector" type="ScrollContainer" parent="Container/Options"]
+clip_contents = false
+custom_minimum_size = Vector2(512, 2.08165e-12)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/Options/Proto Selector"]
+custom_minimum_size = Vector2(512, 2.08165e-12)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 512
+
+[node name="History" type="ScrollContainer" parent="Container/Options"]
+visible = false
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/Options/History"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/Options/History/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 2
+
+[node name="Undo" type="Button" parent="Container/Options/History/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "<  undo"
+
+[node name="Redo" type="Button" parent="Container/Options/History/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "redo  >"
+
+[connection signal="value_changed" from="Container/Controls/ToggleMargins/Toggles/ZSelect/Z" to="." method="_on_z_level_changed"]
+[connection signal="toggled" from="Container/Controls/ToggleMargins/Toggles/PreviewSpin/CheckButton" to="." method="_on_check_button_toggled"]
+[connection signal="toggled" from="Container/Controls/ToggleMargins/Toggles/ShowAxes/CheckButton" to="Container/Map" method="toggle_axes"]
+[connection signal="toggled" from="Container/Controls/ToggleMargins/Toggles/ShowZGrid/CheckButton" to="Container/Map" method="toggle_zgrid"]
+[connection signal="pressed" from="Container/Controls/ButtonsMargins/Buttons/SelectNext" to="Container/Map" method="_on_select_lowest_entropy_pressed"]
+[connection signal="pressed" from="Container/Controls/ButtonsMargins/Buttons/CollapseSelected" to="Container/Map" method="_on_collapse_selected_pressed"]
+[connection signal="pressed" from="Container/Controls/ButtonsMargins/Buttons/CollapseRandom" to="Container/Map" method="_on_collapse_lowest_entropy_pressed"]
+[connection signal="toggled" from="Container/Controls/ButtonsMargins/Buttons/AutoCollapse/CheckButton" to="." method="_on_auto_collapse_toggled"]
+[connection signal="pressed" from="Container/Controls/ButtonsMargins/Buttons/CustomConstraints" to="." method="_on_top_constraint_pressed"]
+[connection signal="pressed" from="Container/Controls/ButtonsMargins/Buttons/Platform" to="." method="_on_center_platform_pressed"]
+[connection signal="slot_selected" from="Container/Map" to="." method="_on_map_slot_selected"]
+[connection signal="pressed" from="Container/Options/History/VBoxContainer/HBoxContainer/Undo" to="Container/Map" method="_on_undo_pressed"]

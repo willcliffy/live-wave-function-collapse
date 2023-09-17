@@ -1,0 +1,77 @@
+[gd_scene load_steps=12 format=3 uid="uid://dkj8wu5cotccu"]
+
+[ext_resource type="Script" path="res://src/map.gd" id="1_fw8f6"]
+[ext_resource type="Texture2D" uid="uid://cgcr8aqkxanj2" path="res://belfast_sunset_puresky_2k.exr" id="2_e51py"]
+[ext_resource type="PackedScene" uid="uid://bk3bseg14sk4n" path="res://axes.blend" id="2_r8ofa"]
+[ext_resource type="Script" path="res://src/CameraBase.gd" id="4_6i0uu"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_crdv1"]
+panorama = ExtResource("2_e51py")
+
+[sub_resource type="Sky" id="Sky_ni0vf"]
+sky_material = SubResource("PanoramaSkyMaterial_crdv1")
+
+[sub_resource type="Environment" id="Environment_ic6rf"]
+background_mode = 2
+sky = SubResource("Sky_ni0vf")
+
+[sub_resource type="World3D" id="World3D_h3dty"]
+environment = SubResource("Environment_ic6rf")
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_mrwfr"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ldscb"]
+transparency = 1
+blend_mode = 1
+albedo_color = Color(0, 0, 1, 0.611765)
+metallic_specular = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_47ojj"]
+material = SubResource("StandardMaterial3D_ldscb")
+size = Vector3(1000, 1, 1000)
+
+[node name="Map" type="SubViewportContainer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -256.0
+offset_top = -256.0
+offset_right = 256.0
+offset_bottom = 256.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 2
+mouse_filter = 0
+script = ExtResource("1_fw8f6")
+
+[node name="Viewport" type="SubViewport" parent="."]
+world_3d = SubResource("World3D_h3dty")
+handle_input_locally = false
+physics_object_picking = true
+size = Vector2i(1440, 1440)
+render_target_update_mode = 4
+
+[node name="Scene" type="Node3D" parent="Viewport"]
+
+[node name="Environment" type="WorldEnvironment" parent="Viewport/Scene"]
+environment = SubResource("Environment_ic6rf")
+
+[node name="Mesh" type="MeshInstance3D" parent="Viewport/Scene"]
+visible = false
+mesh = SubResource("CapsuleMesh_mrwfr")
+
+[node name="Grid" type="MeshInstance3D" parent="Viewport/Scene"]
+visible = false
+mesh = SubResource("BoxMesh_47ojj")
+
+[node name="Axes" parent="Viewport/Scene" instance=ExtResource("2_r8ofa")]
+transform = Transform3D(1, 0, -1.5246e-23, -1.5246e-23, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+
+[node name="CameraBase" type="Node3D" parent="Viewport/Scene"]
+transform = Transform3D(1, -5.48843e-16, 2.85709e-16, 2.85709e-16, 0.819152, 0.573576, -5.48843e-16, -0.573576, 0.819152, 2.08165e-12, 2.08165e-12, 2.08165e-12)
+script = ExtResource("4_6i0uu")
+
+[node name="Camera" type="Camera3D" parent="Viewport/Scene/CameraBase"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 15)

@@ -1,0 +1,1910 @@
+{
+	"p0": {
+		"mesh_name": "wfc_module_0",
+		"mesh_rotation": 0,
+		"posX": "-1",
+		"negX": "0f",
+		"posY": "0",
+		"negY": "-1",
+		"posZ": "-1",
+		"negZ": "v0_0",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p1",
+				"p9",
+				"p26",
+				"p30"
+			],
+			[
+				"p3",
+				"p12",
+				"p26"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p13",
+				"p23",
+				"p30"
+			]
+		]
+	},
+	"p1": {
+		"mesh_name": "wfc_module_0",
+		"mesh_rotation": 1,
+		"posX": "-1",
+		"negX": "0",
+		"posY": "-1",
+		"negY": "0f",
+		"posZ": "-1",
+		"negZ": "v0_1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p2",
+				"p10",
+				"p27",
+				"p31"
+			],
+			[
+				"p0",
+				"p9",
+				"p27"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p14",
+				"p24",
+				"p31"
+			]
+		]
+	},
+	"p2": {
+		"mesh_name": "wfc_module_0",
+		"mesh_rotation": 2,
+		"posX": "0f",
+		"negX": "-1",
+		"posY": "-1",
+		"negY": "0",
+		"posZ": "-1",
+		"negZ": "v0_2",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p1",
+				"p10",
+				"p28"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p3",
+				"p11",
+				"p28",
+				"p32"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p15",
+				"p21",
+				"p32"
+			]
+		]
+	},
+	"p3": {
+		"mesh_name": "wfc_module_0",
+		"mesh_rotation": 3,
+		"posX": "0",
+		"negX": "-1",
+		"posY": "0f",
+		"negY": "-1",
+		"posZ": "-1",
+		"negZ": "v0_3",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p0",
+				"p12",
+				"p25",
+				"p29"
+			],
+			[
+				"p2",
+				"p11",
+				"p25"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p16",
+				"p22",
+				"p29"
+			]
+		]
+	},
+	"p4": {
+		"mesh_name": "wfc_module_1",
+		"mesh_rotation": 0,
+		"posX": "1s",
+		"negX": "-1",
+		"posY": "2",
+		"negY": "2f",
+		"posZ": "v1_0",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p6",
+				"p8",
+				"p9",
+				"p15",
+				"p16",
+				"p26",
+				"p27"
+			],
+			[
+				"p4",
+				"p14",
+				"p31",
+				"p38"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p4",
+				"p13",
+				"p39"
+			],
+			[
+				"p9",
+				"p20",
+				"p30"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p5": {
+		"mesh_name": "wfc_module_1",
+		"mesh_rotation": 1,
+		"posX": "2f",
+		"negX": "2",
+		"posY": "1s",
+		"negY": "-1",
+		"posZ": "v1_1",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p5",
+				"p14",
+				"p40"
+			],
+			[
+				"p7",
+				"p8",
+				"p10",
+				"p13",
+				"p16",
+				"p27",
+				"p28"
+			],
+			[
+				"p5",
+				"p15",
+				"p32",
+				"p39"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p10",
+				"p17",
+				"p31"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p6": {
+		"mesh_name": "wfc_module_1",
+		"mesh_rotation": 2,
+		"posX": "-1",
+		"negX": "1s",
+		"posY": "2f",
+		"negY": "2",
+		"posZ": "v1_2",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p6",
+				"p15",
+				"p37"
+			],
+			[
+				"p4",
+				"p8",
+				"p11",
+				"p13",
+				"p14",
+				"p25",
+				"p28"
+			],
+			[
+				"p6",
+				"p16",
+				"p29",
+				"p40"
+			],
+			[
+				"p11",
+				"p18",
+				"p32"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p7": {
+		"mesh_name": "wfc_module_1",
+		"mesh_rotation": 3,
+		"posX": "2",
+		"negX": "2f",
+		"posY": "-1",
+		"negY": "1s",
+		"posZ": "v1_3",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p7",
+				"p13",
+				"p30",
+				"p37"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p7",
+				"p16",
+				"p38"
+			],
+			[
+				"p5",
+				"p8",
+				"p12",
+				"p14",
+				"p15",
+				"p25",
+				"p26"
+			],
+			[
+				"p12",
+				"p19",
+				"p29"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p8": {
+		"mesh_name": "wfc_module_2",
+		"mesh_rotation": 0,
+		"posX": "1s",
+		"negX": "1s",
+		"posY": "1s",
+		"negY": "1s",
+		"posZ": "-1",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p6",
+				"p8",
+				"p9",
+				"p15",
+				"p16",
+				"p26",
+				"p27"
+			],
+			[
+				"p7",
+				"p8",
+				"p10",
+				"p13",
+				"p16",
+				"p27",
+				"p28"
+			],
+			[
+				"p4",
+				"p8",
+				"p11",
+				"p13",
+				"p14",
+				"p25",
+				"p28"
+			],
+			[
+				"p5",
+				"p8",
+				"p12",
+				"p14",
+				"p15",
+				"p25",
+				"p26"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p9": {
+		"mesh_name": "wfc_module_3",
+		"mesh_rotation": 0,
+		"posX": "-1",
+		"negX": "1s",
+		"posY": "0",
+		"negY": "0f",
+		"posZ": "-1",
+		"negZ": "v1_0",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p1",
+				"p9",
+				"p26",
+				"p30"
+			],
+			[
+				"p4",
+				"p8",
+				"p11",
+				"p13",
+				"p14",
+				"p25",
+				"p28"
+			],
+			[
+				"p0",
+				"p9",
+				"p27"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p4",
+				"p20"
+			]
+		]
+	},
+	"p10": {
+		"mesh_name": "wfc_module_3",
+		"mesh_rotation": 1,
+		"posX": "0f",
+		"negX": "0",
+		"posY": "-1",
+		"negY": "1s",
+		"posZ": "-1",
+		"negZ": "v1_1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p1",
+				"p10",
+				"p28"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p2",
+				"p10",
+				"p27",
+				"p31"
+			],
+			[
+				"p5",
+				"p8",
+				"p12",
+				"p14",
+				"p15",
+				"p25",
+				"p26"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p5",
+				"p17"
+			]
+		]
+	},
+	"p11": {
+		"mesh_name": "wfc_module_3",
+		"mesh_rotation": 2,
+		"posX": "1s",
+		"negX": "-1",
+		"posY": "0f",
+		"negY": "0",
+		"posZ": "-1",
+		"negZ": "v1_2",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p6",
+				"p8",
+				"p9",
+				"p15",
+				"p16",
+				"p26",
+				"p27"
+			],
+			[
+				"p2",
+				"p11",
+				"p25"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p3",
+				"p11",
+				"p28",
+				"p32"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p6",
+				"p18"
+			]
+		]
+	},
+	"p12": {
+		"mesh_name": "wfc_module_3",
+		"mesh_rotation": 3,
+		"posX": "0",
+		"negX": "0f",
+		"posY": "1s",
+		"negY": "-1",
+		"posZ": "-1",
+		"negZ": "v1_3",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p0",
+				"p12",
+				"p25",
+				"p29"
+			],
+			[
+				"p7",
+				"p8",
+				"p10",
+				"p13",
+				"p16",
+				"p27",
+				"p28"
+			],
+			[
+				"p3",
+				"p12",
+				"p26"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p7",
+				"p19"
+			]
+		]
+	},
+	"p13": {
+		"mesh_name": "wfc_module_4",
+		"mesh_rotation": 0,
+		"posX": "1s",
+		"negX": "2f",
+		"posY": "2",
+		"negY": "1s",
+		"posZ": "v0_0",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p6",
+				"p8",
+				"p9",
+				"p15",
+				"p16",
+				"p26",
+				"p27"
+			],
+			[
+				"p4",
+				"p14",
+				"p31",
+				"p38"
+			],
+			[
+				"p7",
+				"p16",
+				"p38"
+			],
+			[
+				"p5",
+				"p8",
+				"p12",
+				"p14",
+				"p15",
+				"p25",
+				"p26"
+			],
+			[
+				"p0",
+				"p23"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p14": {
+		"mesh_name": "wfc_module_4",
+		"mesh_rotation": 1,
+		"posX": "1s",
+		"negX": "2",
+		"posY": "1s",
+		"negY": "2f",
+		"posZ": "v0_1",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p6",
+				"p8",
+				"p9",
+				"p15",
+				"p16",
+				"p26",
+				"p27"
+			],
+			[
+				"p7",
+				"p8",
+				"p10",
+				"p13",
+				"p16",
+				"p27",
+				"p28"
+			],
+			[
+				"p5",
+				"p15",
+				"p32",
+				"p39"
+			],
+			[
+				"p4",
+				"p13",
+				"p39"
+			],
+			[
+				"p1",
+				"p24"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p15": {
+		"mesh_name": "wfc_module_4",
+		"mesh_rotation": 2,
+		"posX": "2f",
+		"negX": "1s",
+		"posY": "1s",
+		"negY": "2",
+		"posZ": "v0_2",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p5",
+				"p14",
+				"p40"
+			],
+			[
+				"p7",
+				"p8",
+				"p10",
+				"p13",
+				"p16",
+				"p27",
+				"p28"
+			],
+			[
+				"p4",
+				"p8",
+				"p11",
+				"p13",
+				"p14",
+				"p25",
+				"p28"
+			],
+			[
+				"p6",
+				"p16",
+				"p29",
+				"p40"
+			],
+			[
+				"p2",
+				"p21"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p16": {
+		"mesh_name": "wfc_module_4",
+		"mesh_rotation": 3,
+		"posX": "2",
+		"negX": "1s",
+		"posY": "2f",
+		"negY": "1s",
+		"posZ": "v0_3",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p7",
+				"p13",
+				"p30",
+				"p37"
+			],
+			[
+				"p6",
+				"p15",
+				"p37"
+			],
+			[
+				"p4",
+				"p8",
+				"p11",
+				"p13",
+				"p14",
+				"p25",
+				"p28"
+			],
+			[
+				"p5",
+				"p8",
+				"p12",
+				"p14",
+				"p15",
+				"p25",
+				"p26"
+			],
+			[
+				"p3",
+				"p22"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p17": {
+		"mesh_name": "wfc_module_5",
+		"mesh_rotation": 0,
+		"posX": "3",
+		"negX": "3f",
+		"posY": "-1",
+		"negY": "-1",
+		"posZ": "v1_1",
+		"negZ": "v1_1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p17",
+				"p24",
+				"p31",
+				"p36"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p17",
+				"p21",
+				"p35"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p10",
+				"p17",
+				"p31"
+			],
+			[
+				"p5",
+				"p17"
+			]
+		]
+	},
+	"p18": {
+		"mesh_name": "wfc_module_5",
+		"mesh_rotation": 1,
+		"posX": "-1",
+		"negX": "-1",
+		"posY": "3",
+		"negY": "3f",
+		"posZ": "v1_2",
+		"negZ": "v1_2",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p18",
+				"p21",
+				"p32",
+				"p33"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p18",
+				"p22",
+				"p36"
+			],
+			[
+				"p11",
+				"p18",
+				"p32"
+			],
+			[
+				"p6",
+				"p18"
+			]
+		]
+	},
+	"p19": {
+		"mesh_name": "wfc_module_5",
+		"mesh_rotation": 2,
+		"posX": "3f",
+		"negX": "3",
+		"posY": "-1",
+		"negY": "-1",
+		"posZ": "v1_3",
+		"negZ": "v1_3",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p19",
+				"p23",
+				"p33"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p19",
+				"p22",
+				"p29",
+				"p34"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p12",
+				"p19",
+				"p29"
+			],
+			[
+				"p7",
+				"p19"
+			]
+		]
+	},
+	"p20": {
+		"mesh_name": "wfc_module_5",
+		"mesh_rotation": 3,
+		"posX": "-1",
+		"negX": "-1",
+		"posY": "3f",
+		"negY": "3",
+		"posZ": "v1_0",
+		"negZ": "v1_0",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p20",
+				"p24",
+				"p34"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p20",
+				"p23",
+				"p30",
+				"p35"
+			],
+			[
+				"p9",
+				"p20",
+				"p30"
+			],
+			[
+				"p4",
+				"p20"
+			]
+		]
+	},
+	"p21": {
+		"mesh_name": "wfc_module_6",
+		"mesh_rotation": 0,
+		"posX": "3",
+		"negX": "-1",
+		"posY": "-1",
+		"negY": "3f",
+		"posZ": "v0_2",
+		"negZ": "v0_2",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p17",
+				"p24",
+				"p31",
+				"p36"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p18",
+				"p22",
+				"p36"
+			],
+			[
+				"p2",
+				"p21"
+			],
+			[
+				"p15",
+				"p21",
+				"p32"
+			]
+		]
+	},
+	"p22": {
+		"mesh_name": "wfc_module_6",
+		"mesh_rotation": 1,
+		"posX": "3f",
+		"negX": "-1",
+		"posY": "3",
+		"negY": "-1",
+		"posZ": "v0_3",
+		"negZ": "v0_3",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p19",
+				"p23",
+				"p33"
+			],
+			[
+				"p18",
+				"p21",
+				"p32",
+				"p33"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p3",
+				"p22"
+			],
+			[
+				"p16",
+				"p22",
+				"p29"
+			]
+		]
+	},
+	"p23": {
+		"mesh_name": "wfc_module_6",
+		"mesh_rotation": 2,
+		"posX": "-1",
+		"negX": "3",
+		"posY": "3f",
+		"negY": "-1",
+		"posZ": "v0_0",
+		"negZ": "v0_0",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p20",
+				"p24",
+				"p34"
+			],
+			[
+				"p19",
+				"p22",
+				"p29",
+				"p34"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p0",
+				"p23"
+			],
+			[
+				"p13",
+				"p23",
+				"p30"
+			]
+		]
+	},
+	"p24": {
+		"mesh_name": "wfc_module_6",
+		"mesh_rotation": 3,
+		"posX": "-1",
+		"negX": "3f",
+		"posY": "-1",
+		"negY": "3",
+		"posZ": "v0_1",
+		"negZ": "v0_1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p17",
+				"p21",
+				"p35"
+			],
+			[
+				"p20",
+				"p23",
+				"p30",
+				"p35"
+			],
+			[
+				"p1",
+				"p24"
+			],
+			[
+				"p14",
+				"p24",
+				"p31"
+			]
+		]
+	},
+	"p25": {
+		"mesh_name": "wfc_module_7",
+		"mesh_rotation": 0,
+		"posX": "1s",
+		"negX": "0f",
+		"posY": "1s",
+		"negY": "0",
+		"posZ": "-1",
+		"negZ": "v2_0",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p6",
+				"p8",
+				"p9",
+				"p15",
+				"p16",
+				"p26",
+				"p27"
+			],
+			[
+				"p7",
+				"p8",
+				"p10",
+				"p13",
+				"p16",
+				"p27",
+				"p28"
+			],
+			[
+				"p3",
+				"p12",
+				"p26"
+			],
+			[
+				"p3",
+				"p11",
+				"p28",
+				"p32"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p33",
+				"p37"
+			]
+		]
+	},
+	"p26": {
+		"mesh_name": "wfc_module_7",
+		"mesh_rotation": 1,
+		"posX": "0",
+		"negX": "1s",
+		"posY": "1s",
+		"negY": "0f",
+		"posZ": "-1",
+		"negZ": "v2_1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p0",
+				"p12",
+				"p25",
+				"p29"
+			],
+			[
+				"p7",
+				"p8",
+				"p10",
+				"p13",
+				"p16",
+				"p27",
+				"p28"
+			],
+			[
+				"p4",
+				"p8",
+				"p11",
+				"p13",
+				"p14",
+				"p25",
+				"p28"
+			],
+			[
+				"p0",
+				"p9",
+				"p27"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p34",
+				"p38"
+			]
+		]
+	},
+	"p27": {
+		"mesh_name": "wfc_module_7",
+		"mesh_rotation": 2,
+		"posX": "0f",
+		"negX": "1s",
+		"posY": "0",
+		"negY": "1s",
+		"posZ": "-1",
+		"negZ": "v2_2",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p1",
+				"p10",
+				"p28"
+			],
+			[
+				"p1",
+				"p9",
+				"p26",
+				"p30"
+			],
+			[
+				"p4",
+				"p8",
+				"p11",
+				"p13",
+				"p14",
+				"p25",
+				"p28"
+			],
+			[
+				"p5",
+				"p8",
+				"p12",
+				"p14",
+				"p15",
+				"p25",
+				"p26"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p35",
+				"p39"
+			]
+		]
+	},
+	"p28": {
+		"mesh_name": "wfc_module_7",
+		"mesh_rotation": 3,
+		"posX": "1s",
+		"negX": "0",
+		"posY": "0f",
+		"negY": "1s",
+		"posZ": "-1",
+		"negZ": "v2_3",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p6",
+				"p8",
+				"p9",
+				"p15",
+				"p16",
+				"p26",
+				"p27"
+			],
+			[
+				"p2",
+				"p11",
+				"p25"
+			],
+			[
+				"p2",
+				"p10",
+				"p27",
+				"p31"
+			],
+			[
+				"p5",
+				"p8",
+				"p12",
+				"p14",
+				"p15",
+				"p25",
+				"p26"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p36",
+				"p40"
+			]
+		]
+	},
+	"p29": {
+		"mesh_name": "wfc_module_8",
+		"mesh_rotation": 0,
+		"posX": "3f",
+		"negX": "0f",
+		"posY": "2f",
+		"negY": "-1",
+		"posZ": "v0_3",
+		"negZ": "v1_3",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p19",
+				"p23",
+				"p33"
+			],
+			[
+				"p6",
+				"p15",
+				"p37"
+			],
+			[
+				"p3",
+				"p12",
+				"p26"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p3",
+				"p22"
+			],
+			[
+				"p7",
+				"p19"
+			]
+		]
+	},
+	"p30": {
+		"mesh_name": "wfc_module_8",
+		"mesh_rotation": 1,
+		"posX": "-1",
+		"negX": "2f",
+		"posY": "3f",
+		"negY": "0f",
+		"posZ": "v0_0",
+		"negZ": "v1_0",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p20",
+				"p24",
+				"p34"
+			],
+			[
+				"p7",
+				"p16",
+				"p38"
+			],
+			[
+				"p0",
+				"p9",
+				"p27"
+			],
+			[
+				"p0",
+				"p23"
+			],
+			[
+				"p4",
+				"p20"
+			]
+		]
+	},
+	"p31": {
+		"mesh_name": "wfc_module_8",
+		"mesh_rotation": 2,
+		"posX": "0f",
+		"negX": "3f",
+		"posY": "-1",
+		"negY": "2f",
+		"posZ": "v0_1",
+		"negZ": "v1_1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p1",
+				"p10",
+				"p28"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p17",
+				"p21",
+				"p35"
+			],
+			[
+				"p4",
+				"p13",
+				"p39"
+			],
+			[
+				"p1",
+				"p24"
+			],
+			[
+				"p5",
+				"p17"
+			]
+		]
+	},
+	"p32": {
+		"mesh_name": "wfc_module_8",
+		"mesh_rotation": 3,
+		"posX": "2f",
+		"negX": "-1",
+		"posY": "0f",
+		"negY": "3f",
+		"posZ": "v0_2",
+		"negZ": "v1_2",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p5",
+				"p14",
+				"p40"
+			],
+			[
+				"p2",
+				"p11",
+				"p25"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p18",
+				"p22",
+				"p36"
+			],
+			[
+				"p2",
+				"p21"
+			],
+			[
+				"p6",
+				"p18"
+			]
+		]
+	},
+	"p33": {
+		"mesh_name": "wfc_module_9",
+		"mesh_rotation": 0,
+		"posX": "-1",
+		"negX": "3",
+		"posY": "-1",
+		"negY": "3f",
+		"posZ": "v2_0",
+		"negZ": "v2_0",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p19",
+				"p22",
+				"p29",
+				"p34"
+			],
+			[
+				"p18",
+				"p22",
+				"p36"
+			],
+			[
+				"p25",
+				"p33"
+			],
+			[
+				"p33",
+				"p37"
+			]
+		]
+	},
+	"p34": {
+		"mesh_name": "wfc_module_9",
+		"mesh_rotation": 1,
+		"posX": "3f",
+		"negX": "-1",
+		"posY": "-1",
+		"negY": "3",
+		"posZ": "v2_1",
+		"negZ": "v2_1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p19",
+				"p23",
+				"p33"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p20",
+				"p23",
+				"p30",
+				"p35"
+			],
+			[
+				"p26",
+				"p34"
+			],
+			[
+				"p34",
+				"p38"
+			]
+		]
+	},
+	"p35": {
+		"mesh_name": "wfc_module_9",
+		"mesh_rotation": 2,
+		"posX": "3",
+		"negX": "-1",
+		"posY": "3f",
+		"negY": "-1",
+		"posZ": "v2_2",
+		"negZ": "v2_2",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p17",
+				"p24",
+				"p31",
+				"p36"
+			],
+			[
+				"p20",
+				"p24",
+				"p34"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p27",
+				"p35"
+			],
+			[
+				"p35",
+				"p39"
+			]
+		]
+	},
+	"p36": {
+		"mesh_name": "wfc_module_9",
+		"mesh_rotation": 3,
+		"posX": "-1",
+		"negX": "3f",
+		"posY": "3",
+		"negY": "-1",
+		"posZ": "v2_3",
+		"negZ": "v2_3",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p18",
+				"p21",
+				"p32",
+				"p33"
+			],
+			[
+				"p17",
+				"p21",
+				"p35"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p28",
+				"p36"
+			],
+			[
+				"p36",
+				"p40"
+			]
+		]
+	},
+	"p37": {
+		"mesh_name": "wfc_module_10",
+		"mesh_rotation": 0,
+		"posX": "-1",
+		"negX": "2f",
+		"posY": "-1",
+		"negY": "2",
+		"posZ": "v2_0",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p7",
+				"p16",
+				"p38"
+			],
+			[
+				"p6",
+				"p16",
+				"p29",
+				"p40"
+			],
+			[
+				"p25",
+				"p33"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p38": {
+		"mesh_name": "wfc_module_10",
+		"mesh_rotation": 1,
+		"posX": "2",
+		"negX": "-1",
+		"posY": "-1",
+		"negY": "2f",
+		"posZ": "v2_1",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p7",
+				"p13",
+				"p30",
+				"p37"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p4",
+				"p13",
+				"p39"
+			],
+			[
+				"p26",
+				"p34"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p39": {
+		"mesh_name": "wfc_module_10",
+		"mesh_rotation": 2,
+		"posX": "2f",
+		"negX": "-1",
+		"posY": "2",
+		"negY": "-1",
+		"posZ": "v2_2",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p5",
+				"p14",
+				"p40"
+			],
+			[
+				"p4",
+				"p14",
+				"p31",
+				"p38"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p27",
+				"p35"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p40": {
+		"mesh_name": "wfc_module_10",
+		"mesh_rotation": 3,
+		"posX": "-1",
+		"negX": "2",
+		"posY": "2f",
+		"negY": "-1",
+		"posZ": "v2_3",
+		"negZ": "-1",
+		"constrain_to": "",
+		"constrain_from": "",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p-1"
+			],
+			[
+				"p6",
+				"p15",
+				"p37"
+			],
+			[
+				"p5",
+				"p15",
+				"p32",
+				"p39"
+			],
+			[
+				"p-1"
+			],
+			[
+				"p28",
+				"p36"
+			],
+			[
+				"p-1"
+			]
+		]
+	},
+	"p-1": {
+		"mesh_name": "-1",
+		"mesh_rotation": 0,
+		"posX": "-1f",
+		"negX": "-1f",
+		"posY": "-1f",
+		"negY": "-1f",
+		"posZ": "-1f",
+		"negZ": "-1f",
+		"constrain_to": "-1",
+		"constrain_from": "-1",
+		"weight": 1,
+		"valid_neighbours": [
+			[
+				"p2",
+				"p3",
+				"p4",
+				"p11",
+				"p18",
+				"p20",
+				"p21",
+				"p22",
+				"p32",
+				"p34",
+				"p35",
+				"p38",
+				"p39",
+				"p-1"
+			],
+			[
+				"p0",
+				"p3",
+				"p5",
+				"p12",
+				"p17",
+				"p19",
+				"p22",
+				"p23",
+				"p29",
+				"p35",
+				"p36",
+				"p39",
+				"p40",
+				"p-1"
+			],
+			[
+				"p0",
+				"p1",
+				"p6",
+				"p9",
+				"p18",
+				"p20",
+				"p23",
+				"p24",
+				"p30",
+				"p33",
+				"p36",
+				"p37",
+				"p40",
+				"p-1"
+			],
+			[
+				"p1",
+				"p2",
+				"p7",
+				"p10",
+				"p17",
+				"p19",
+				"p21",
+				"p24",
+				"p31",
+				"p33",
+				"p34",
+				"p37",
+				"p38",
+				"p-1"
+			],
+			[
+				"p4",
+				"p5",
+				"p6",
+				"p7",
+				"p8",
+				"p13",
+				"p14",
+				"p15",
+				"p16",
+				"p37",
+				"p38",
+				"p39",
+				"p40",
+				"p-1"
+			],
+			[
+				"p0",
+				"p1",
+				"p2",
+				"p3",
+				"p8",
+				"p9",
+				"p10",
+				"p11",
+				"p12",
+				"p25",
+				"p26",
+				"p27",
+				"p28",
+				"p-1"
+			]
+		]
+	}
+}
