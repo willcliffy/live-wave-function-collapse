@@ -1,8 +1,6 @@
 extends Area3D
 
-signal selected(slot: Area3D)
-signal deselected(slot: Area3D)
-signal collapsed(slot: Area3D)
+signal selected()
 
 const CONSTRAIN_ANIMATION_DURATION = 0.5
 
@@ -15,9 +13,14 @@ var is_expanding = false
 var current_z: int = 0
 var _last_possibilities: Array = []
 var _possibilities: Array = []
+var _position: Vector3
+
 var _collapsed_to: String
 
 var constrain_time_left = CONSTRAIN_ANIMATION_DURATION
+
+func _ready():
+	_position = position
 
 
 func _process(delta):
@@ -73,7 +76,7 @@ func set_selected():
 	is_selected = true
 	$SelectedHighlight.visible = true
 	$HoveredHighlight.visible = false
-	selected.emit(self)
+	selected.emit()
 
 
 func get_last_possibilities():
@@ -108,7 +111,6 @@ func collapse(proto_name: String = String()):
 
 	deselect()
 	play_constrain_animation()
-	# collapsed.emit(self)
 
 	if proto_name == "-1" or proto_name == "p-1":
 		return

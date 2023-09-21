@@ -1,6 +1,5 @@
 extends Control
 
-signal z_changed(z_value: int)
 signal show_axes_toggled(show_axes: bool)
 signal apply_custom_constraints()
 signal auto_collapse_toggled(auto_collapsing: bool)
@@ -14,8 +13,8 @@ signal size_set(size: Vector3)
 
 
 func _on_z_value_changed(value):
-	zselector.get_node("Label").text = str(value)
-	z_changed.emit(value)
+	zselector.get_node("Value").text = str(value)
+	WFC.z_changed(value)
 
 
 func _on_show_axes_toggled(button_pressed):
