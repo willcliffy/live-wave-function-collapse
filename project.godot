@@ -17,8 +17,9 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-WFC="*res://src/wfc.gd"
+WFC="*res://src/wfc_utils.gd"
 Logger="*res://src/logger.gd"
+WfcCollapser="*res://src/wfc_collapser.gd"
 
 [display]
 
