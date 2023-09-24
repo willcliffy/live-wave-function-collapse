@@ -4,6 +4,7 @@ signal show_axes_toggled(show_axes: bool)
 signal apply_custom_constraints()
 signal auto_collapse_toggled(auto_collapsing: bool)
 signal size_set(size: Vector3)
+signal z_changed(value: int)
 
 @onready var zselector = get_node("Controls/TabContainer/Collapse/Collapse/Toggles/ZSelect")
 @onready var apply_custom_constraints_button = get_node("Controls/TabContainer/Setup/VBoxContainer/CustomConstraints")
@@ -14,7 +15,7 @@ signal size_set(size: Vector3)
 
 func _on_z_value_changed(value):
 	zselector.get_node("Value").text = str(value)
-	WFC.z_changed(value)
+	z_changed.emit(value)
 
 
 func _on_show_axes_toggled(button_pressed):

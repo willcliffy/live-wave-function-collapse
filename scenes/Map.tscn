@@ -1,9 +1,11 @@
-[gd_scene load_steps=12 format=3 uid="uid://dkj8wu5cotccu"]
+[gd_scene load_steps=13 format=3 uid="uid://dkj8wu5cotccu"]
 
 [ext_resource type="Script" path="res://src/map.gd" id="1_fw8f6"]
-[ext_resource type="Texture2D" uid="uid://dgnsig77e0k6x" path="res://belfast_sunset_puresky_2k.exr" id="2_e51py"]
-[ext_resource type="PackedScene" uid="uid://5krxgecv4iw2" path="res://axes.blend" id="2_r8ofa"]
+[ext_resource type="Texture2D" uid="uid://6854ejhkw6ip" path="res://belfast_sunset_puresky_2k.exr" id="2_e51py"]
+[ext_resource type="PackedScene" uid="uid://hvnewhh34y82" path="res://axes.blend" id="2_r8ofa"]
 [ext_resource type="Script" path="res://src/CameraBase.gd" id="4_6i0uu"]
+
+[sub_resource type="World3D" id="World3D_h3dty"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_crdv1"]
 panorama = ExtResource("2_e51py")
@@ -14,9 +16,6 @@ sky_material = SubResource("PanoramaSkyMaterial_crdv1")
 [sub_resource type="Environment" id="Environment_ic6rf"]
 background_mode = 2
 sky = SubResource("Sky_ni0vf")
-
-[sub_resource type="World3D" id="World3D_h3dty"]
-environment = SubResource("Environment_ic6rf")
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_mrwfr"]
 
@@ -29,6 +28,9 @@ metallic_specular = 0.0
 [sub_resource type="BoxMesh" id="BoxMesh_47ojj"]
 material = SubResource("StandardMaterial3D_ldscb")
 size = Vector3(1000, 1, 1000)
+
+[sub_resource type="LabelSettings" id="LabelSettings_yb3wo"]
+font_color = Color(0, 0, 0, 1)
 
 [node name="Map" type="SubViewportContainer"]
 anchors_preset = 8
@@ -75,3 +77,8 @@ script = ExtResource("4_6i0uu")
 
 [node name="Camera" type="Camera3D" parent="Viewport/Scene/CameraBase"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 15)
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+text = "FPS: "
+label_settings = SubResource("LabelSettings_yb3wo")

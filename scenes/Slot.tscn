@@ -13,13 +13,13 @@ albedo_color = Color(0.588235, 0.588235, 0, 1)
 [sub_resource type="BoxMesh" id="BoxMesh_idsw1"]
 material = SubResource("StandardMaterial3D_ngo6w")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mgw02"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_swuan"]
 transparency = 1
 blend_mode = 1
 albedo_color = Color(0, 0.305882, 0.611765, 1)
 
-[sub_resource type="BoxMesh" id="BoxMesh_4028v"]
-material = SubResource("StandardMaterial3D_mgw02")
+[sub_resource type="BoxMesh" id="BoxMesh_0bgco"]
+material = SubResource("StandardMaterial3D_swuan")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ou3bu"]
 transparency = 1
@@ -29,13 +29,13 @@ albedo_color = Color(0.4, 0.4, 0.4, 1)
 [sub_resource type="BoxMesh" id="BoxMesh_3vnvo"]
 material = SubResource("StandardMaterial3D_ou3bu")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_plsev"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cktq8"]
 transparency = 1
 blend_mode = 1
 albedo_color = Color(1, 0, 0, 0.501961)
 
-[sub_resource type="BoxMesh" id="BoxMesh_hxc51"]
-material = SubResource("StandardMaterial3D_plsev")
+[sub_resource type="BoxMesh" id="BoxMesh_r44dh"]
+material = SubResource("StandardMaterial3D_cktq8")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ynsml"]
 transparency = 1
@@ -67,7 +67,7 @@ skeleton = NodePath("../..")
 
 [node name="LastCollapsedHighlight" type="MeshInstance3D" parent="."]
 visible = false
-mesh = SubResource("BoxMesh_4028v")
+mesh = SubResource("BoxMesh_0bgco")
 skeleton = NodePath("../..")
 
 [node name="HoveredHighlight" type="MeshInstance3D" parent="."]
@@ -77,7 +77,7 @@ skeleton = NodePath("../..")
 
 [node name="ConstrainHighlight" type="MeshInstance3D" parent="."]
 visible = false
-mesh = SubResource("BoxMesh_hxc51")
+mesh = SubResource("BoxMesh_r44dh")
 
 [node name="ExpandHighlight" type="MeshInstance3D" parent="."]
 visible = false

@@ -13,6 +13,8 @@ var slots = []
 
 var wave_function: WfcCollapser.WaveFunction
 
+var last_collapsed = []
+
 
 func _ready():
 	wave_function = WfcCollapser.WaveFunction.new()
@@ -20,6 +22,7 @@ func _ready():
 
 func _process(delta):
 	wave_function.process(delta)
+	$Label.text = "FPS: " + str(Engine.get_frames_per_second())
 
 
 func generate_slots(input_map_size: Vector3):
@@ -32,13 +35,37 @@ func generate_slots(input_map_size: Vector3):
 	wave_function.initialize(map_size)
 	wave_function.superposition_collapsed.connect(
 		func(superposition: WfcCollapser.Superposition):
-			print("superposition at ", superposition.position, " collapsed to ", superposition.collapsed_to)
-			_get_slot(superposition.position).collapse(superposition.collapsed_to)
+			# print("superposition at ", superposition.position, " collapsed to ", superposition.collapsed_to)
+			var slot = _get_slot(superposition.position)
+			slot.collapse(superposition.collapsed_to)
+			if len(last_collapsed) > 0:
+				for l in last_collapsed:
+					l.decrease_last_collapsed_brightness(0.5)
+				if len(last_collapsed) > 3:
+					var t = last_collapsed.pop_back() 
+					t.clear_last_collapsed()
+			last_collapsed.push_front(slot)
+			slot.set_last_collapsed()
+	)
+	wave_function.superposition_collapsed_release.connect(
+		func(superposition: WfcCollapser.Superposition):
+			#_get_slot(superposition.position).clear_last_collapsed()
+			pass
 	)
 	wave_function.superposition_constrained.connect(
 		func(superposition: WfcCollapser.Superposition):
-			# print("superposition at ", superposition.position, " constrained to ", superposition.get_possibilities())
+			#print("superposition at ", superposition.position, " constrained to entropy ", len(superposition.get_possibilities()))
 			_get_slot(superposition.position).constrain(superposition.get_possibilities())
+	)
+	wave_function.superposition_constrained_release.connect(
+		func(superposition: WfcCollapser.Superposition):
+			pass
+			#print("superposition at ", superposition.position, " RELEASED")
+			#_get_slot(superposition.position).release_constrain_animation()
+	)
+	wave_function.superposition_overcollapsed.connect(
+		func(position: Vector3):
+			_get_slot(position).overconstrained()
 	)
 
 	for y in range(map_size.y):
@@ -56,25 +83,27 @@ func generate_slots(input_map_size: Vector3):
 						if not auto_collapsing:
 							slot_selected.emit(slot)
 				)
-				slot.expand(WFC.proto_data.keys())
+				slot.expand(WfcCollapser.WFCUtils.proto_data.keys())
 				$Viewport/Scene.add_child(slot)
 				slots.append(slot)
 				slot_matrix[y][x].append(slot)
+				slot.z_changed(0)
+
 	return slots
 
+
 func _on_apply_custom_constraints_pressed():
-	# WFC.apply_custom_constraints()
-	pass
+	wave_function.apply_custom_constraints()
 
 
 func z_changed(value):
-	# WFC.z_changed(value)
-	pass
+	for slot in slots:
+		slot.z_changed(value)
 
 
 func set_auto_collapse(button_pressed):
 	auto_collapsing = button_pressed
-	wave_function.paused = not auto_collapsing
+	wave_function.autocollapsing = auto_collapsing
 
 
 func toggle_axes(axes_visible): 
@@ -84,5 +113,10 @@ func toggle_axes(axes_visible):
 func toggle_zgrid(zgrid_visible):
 	$Viewport/Scene/grid.visible = zgrid_visible
 
+
 func _get_slot(position: Vector3) -> Area3D:
 	return slot_matrix[position.y][position.x][position.z]
+
+
+func collapse(position: Vector3, proto: String):
+	wave_function.collapse(position, proto)

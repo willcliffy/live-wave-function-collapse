@@ -10,6 +10,8 @@ const nY = 3
 const pZ = 4
 const nZ = 5
 
+const time_before_next_tick_msec = 1.0 / 60.0 * 1000 * 0.75
+
 
 class WFCUtils:
 	static var loaded: bool = false
@@ -45,7 +47,15 @@ class WFCUtils:
 	static func proto_uncapped(proto: String, direction: Vector3 = Vector3.UP) -> bool:
 		var direction_ind = _direction_index(Vector3.ZERO, direction)
 		return not "p-1" in proto_data[proto]["valid_neighbours"][direction_ind]
-	
+
+	static func get_uncapped_protos(direction: Vector3 = Vector3.UP) -> Array:
+		var protos = []
+		for proto_name in proto_data:
+			if proto_uncapped(proto_name, direction):
+				continue
+			protos.append(proto_name)
+		return protos
+
 	static func _direction_index(from: Vector3, to: Vector3, tolerance: float = 0.1) -> int:
 		## NOTE that this function swaps Z and Y because of the shape of the proto data vs godot being Y-up
 		if to.x > from.x + tolerance:
@@ -105,18 +115,16 @@ class Superposition:
 
 		return true
 
-	func constrain_from_propagation(changed: Superposition) -> bool:
+	func constrained_from_propagation(changed: Superposition) -> Array:
 		var new_superposition = []
 		for proto_1 in changed.get_possibilities():
 			for proto_2 in get_possibilities():
+				if proto_2 in new_superposition:
+					continue
 				if WFCUtils.protos_compatible(proto_1, changed.position, proto_2, position):
 					new_superposition.append(proto_2)
 
-		if len(superposition) != len(new_superposition):
-			constrain(new_superposition)
-			return true
-
-		return false
+		return new_superposition
 
 
 class Propagation:
@@ -127,11 +135,12 @@ class Propagation:
 
 class WaveFunction:
 	signal superposition_collapsed(Superposition)
+	signal superposition_collapsed_release(Superposition)
 	signal superposition_constrained(Superposition)
+	signal superposition_constrained_release(Superposition)
+	signal superposition_overcollapsed(position: Vector3)
 
-	# Whether or not we should explicitly collapse a cell when there is no root propagation to process
-	# Start with WFC paused to avoid throttling on startup
-	var paused: bool = true
+	var autocollapsing: bool = true
 
 	# size of the WFC space. This version does not support infinite terrain (yet) 
 	var size: Vector3
@@ -143,7 +152,8 @@ class WaveFunction:
 
 	# Once a cell is explicitly collapsed, it begins a propagations step.
 	# A propagation can spawn other propagation steps, which should be processed before finishing the root propagation step.
-	var root_propagation: Propagation
+	var root_propagations: Array
+	var visited_positions: Array
 	
 	func initialize(input_size: Vector3):
 		size = input_size
@@ -160,23 +170,67 @@ class WaveFunction:
 					superposition.superposition = WFCUtils.proto_data.keys()
 					superpositions[y][x].append(superposition)
 
-	func process(_delta) -> void:
-		if paused:
-			return
+	func apply_custom_constraints():
+		for x in range(size.x):
+			for z in range(size.z):
+				var superposition: Superposition = superpositions[size.y - 1][x][z]
+				superposition.constrain(WFCUtils.get_uncapped_protos())
+				var root_propagation = Propagation.new()
+				root_propagation.superposition = superposition
+				root_propagations.push_front(root_propagation)
 
-		for i in range(100):
-			if root_propagation:
-				process_propagation(_delta)
-			else:
+		# no "uncapped" prototypes along the sides of the space
+		for y in range(size.y):
+			for x in range(size.x):
+				for z in range(size.z):
+					var superposition: Superposition = superpositions[y][x][z]
+					if x == 0:
+						superposition.constrain(WFCUtils.get_uncapped_protos(Vector3.MODEL_RIGHT))
+						var root_propagation = Propagation.new()
+						root_propagation.superposition = superposition
+						root_propagations.push_front(root_propagation)
+					if x == size.x - 1:
+						superposition.constrain(WFCUtils.get_uncapped_protos(Vector3.LEFT))
+						var root_propagation = Propagation.new()
+						root_propagation.superposition = superposition
+						root_propagations.push_front(root_propagation)
+					if z == 0:
+						superposition.constrain(WFCUtils.get_uncapped_protos(Vector3.MODEL_REAR))
+						var root_propagation = Propagation.new()
+						root_propagation.superposition = superposition
+						root_propagations.push_front(root_propagation)
+					if z == size.z - 1:
+						superposition.constrain(WFCUtils.get_uncapped_protos(Vector3.MODEL_FRONT))
+						var root_propagation = Propagation.new()
+						root_propagation.superposition = superposition
+						root_propagations.push_front(root_propagation)
+
+	func process(delta) -> void:
+		var s = Time.get_ticks_msec()
+		while Time.get_ticks_msec() - s < time_before_next_tick_msec:
+			if not root_propagations.is_empty():
+				process_propagation(delta)
+			elif autocollapsing:
 				collapse_next()
+
+	func collapse(position: Vector3, proto: String) -> void:
+		var superposition = superpositions[position.y][position.x][position.z]
+		var collapsed = superposition.collapse(proto)
+		if not collapsed:
+			print("Failed to collapse superposition! ", superposition.get_possibilities())
+			return
+		var root_propagation = Propagation.new()
+		root_propagation.superposition = superposition
+		root_propagations.append(root_propagation)
+		superposition_collapsed.emit(superposition)
 
 	func collapse_next() -> void:
 		# Select a random superposition from the list of lowest-entropy superpositions
 		var lowest_entropy_superpositions = _get_lowest_entropy_superpositions()
 		
 		if len(lowest_entropy_superpositions) == 0:
-			print("think we're done")
-			paused = true
+			print("Done!")
+			autocollapsing = false
 			return
 		
 		var superposition: Superposition = lowest_entropy_superpositions[randi() % len(lowest_entropy_superpositions)]
@@ -187,59 +241,63 @@ class WaveFunction:
 			print("Failed to collapse superposition! ", superposition.get_possibilities())
 			return
 
-		root_propagation = Propagation.new()
+		var root_propagation = Propagation.new()
 		root_propagation.superposition = superposition
+		root_propagations.push_front(root_propagation)
 		superposition_collapsed.emit(superposition)
 
 	func process_propagation(_delta):
+		var root_propagation = root_propagations[0] 
 		if not root_propagation.visited:
-			# Root propagation is always an explicit collapse, so we don't need to constrain here
 			root_propagation.neighbor_propagations = _get_neighboring_propagations(root_propagation.superposition.position)
 			root_propagation.visited = true
 			return
 
 		if root_propagation.neighbor_propagations.is_empty():
-			# We've generated neighboring propogations (and maybe traversed them) and now there are no other constrain steps
-			# We are done.
-			print("all neighbors propagated")
-			root_propagation = null
+			#superposition_collapsed_release.emit(root_propagation.superposition)
+			root_propagations.pop_front()
+			visited_positions = []
 			return
 
 		# Go to the first unvisited propagation
 		var last = root_propagation
 		var current: Propagation = root_propagation.neighbor_propagations[0]
-
 		while current.visited:
 			if current.neighbor_propagations.is_empty():
-				# If we've visited this node and it has no propagations, either:
-				# - there were no propagations necessary
-				# - propagations were necessary, and they were completed.
-				# We can remove this node from it's parent
+				superposition_constrained_release.emit(current.superposition)
 				last.neighbor_propagations.pop_front()
 				return
 			last = current
 			current = current.neighbor_propagations[0]
 
-		#print(last.superposition.position, " ", current.superposition.position)
-
-		# We found a node that we haven't travelled to yet
-		# Constrain it, and note which of its neighbors we need to visit next
 		current.visited = true
-		var constrained = current.superposition.constrain_from_propagation(root_propagation.superposition)
-		if constrained:
-			current.neighbor_propagations = _get_neighboring_propagations(current.superposition.position)
+		visited_positions.append(current.superposition.position)
+		var new_superposition = current.superposition.constrained_from_propagation(last.superposition)
+		if len(new_superposition) != len(current.superposition.get_possibilities()):
+			current.superposition.constrain(new_superposition)
+			if len(new_superposition) == 0:
+				superposition_overcollapsed.emit(current.superposition.position)
+				return
+			if len(new_superposition) == 1:
+				visited_positions = []
+				var leaf_propagation = Propagation.new()
+				leaf_propagation.superposition = current.superposition
+				root_propagations.push_front(leaf_propagation)
+				superposition_collapsed.emit(current.superposition)
+				visited_positions = []
+			current.neighbor_propagations = _get_neighboring_propagations(current.superposition.position, visited_positions)
 			superposition_constrained.emit(current.superposition)
 
-	func _get_neighboring_propagations(position: Vector3) -> Array:
+	func _get_neighboring_propagations(position: Vector3, omit: Array = []) -> Array:
 		var neighbor_propagations := []
-		for superposition in _get_neighboring_superpositions(position):
+		for superposition in _get_neighboring_superpositions(position, omit):
 			var neighbor_propagation = Propagation.new()
 			neighbor_propagation.superposition = superposition
 			neighbor_propagations.append(neighbor_propagation)
 
 		return neighbor_propagations
 
-	func _get_neighboring_superpositions(position: Vector3):
+	func _get_neighboring_superpositions(position: Vector3, omit: Array = []):
 		var directions = []
 
 		if position.x < size.x - 1:
@@ -259,7 +317,11 @@ class WaveFunction:
 
 		var result = []
 		for direction in directions:
-			result.append(superpositions[direction.y][direction.x][direction.z])
+			if direction in omit:
+				continue
+			var superposition = superpositions[direction.y][direction.x][direction.z]
+			if not superposition.is_collapsed():
+				result.append(superposition)
 
 		return result
 
@@ -272,6 +334,10 @@ class WaveFunction:
 				for z in range(size.z):
 					var superposition = superpositions[y][x][z]
 					var entropy = superposition.get_entropy()
+					if y == size.y - 1:
+						entropy += 2
+					if y == size.y - 2:
+						entropy += 1
 					if entropy > 1 and entropy < lowest_entropy_value:
 						lowest_entropy_value = entropy
 						lowest_entropy_superpositions = [superposition]
@@ -279,3 +345,4 @@ class WaveFunction:
 						lowest_entropy_superpositions.append(superposition)
 
 		return lowest_entropy_superpositions
+

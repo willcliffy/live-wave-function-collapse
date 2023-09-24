@@ -7,7 +7,8 @@ const CONSTRAIN_ANIMATION_DURATION = 0.5
 var is_selectable = false
 var is_selected = false
 var is_collapsed = false
-var is_constraining = false
+
+var is_constrain_released = true
 var is_expanding = false
 
 var current_z: int = 0
@@ -24,12 +25,12 @@ func _ready():
 
 
 func _process(delta):
-	if is_constraining:
+	if is_constrain_released:
 		constrain_time_left -= delta
-		var transparancy = 0.5 * constrain_time_left / CONSTRAIN_ANIMATION_DURATION
+		var transparancy = 0.7 * constrain_time_left / CONSTRAIN_ANIMATION_DURATION
 		$ConstrainHighlight.mesh.material.albedo_color = Color(1, 0, 0, transparancy)
 		if constrain_time_left < 0:
-			is_constraining = false
+			is_constrain_released = false
 			$ConstrainHighlight.visible = false
 	elif is_expanding:
 		constrain_time_left -= delta
@@ -110,12 +111,12 @@ func collapse(proto_name: String = String()):
 	is_selectable = false
 
 	deselect()
-	play_constrain_animation()
+	#set_last_collapsed()
 
 	if proto_name == "-1" or proto_name == "p-1":
 		return
 
-	var proto_datum = WFC.proto_data[proto_name]
+	var proto_datum = WfcCollapser.WFCUtils.proto_data[proto_name]
 	var mesh_rotation = Vector3(0, proto_datum["mesh_rotation"] * PI/2, 0)
 	var mesh_instance = WFC.meshes.instantiate().get_node(proto_datum["mesh_name"])
 	var mesh = MeshInstance3D.new()
@@ -151,7 +152,15 @@ func overconstrained():
 
 
 func set_last_collapsed():
+	value = 0.5
+	$LastCollapsedHighlight.mesh.material.albedo_color = Color(0, 0, 1, 0.5)
 	$LastCollapsedHighlight.visible = true
+
+var value = 0.5
+
+func decrease_last_collapsed_brightness(amount: float):
+	value = (2.0 * value - amount) / 2.0
+	$LastCollapsedHighlight.mesh.material.albedo_color = Color(0, 0, 1, value)
 
 
 func clear_last_collapsed():
@@ -159,11 +168,14 @@ func clear_last_collapsed():
 
 
 func play_constrain_animation():
-	constrain_time_left = CONSTRAIN_ANIMATION_DURATION
-	is_constraining = true
+	is_constrain_released = false
 	$ConstrainHighlight.mesh.material.albedo_color = Color(1, 0, 0, 0.5)
 	$ConstrainHighlight.visible = true
+	release_constrain_animation()
 
+func release_constrain_animation():
+	constrain_time_left = CONSTRAIN_ANIMATION_DURATION
+	is_constrain_released = true
 
 func play_expand_animation():
 	constrain_time_left = CONSTRAIN_ANIMATION_DURATION

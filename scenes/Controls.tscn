@@ -57,7 +57,7 @@ text = "X"
 [node name="XValue" type="TextEdit" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
-text = "20"
+text = "25"
 scroll_fit_content_height = true
 
 [node name="Y" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
@@ -67,7 +67,7 @@ text = "Y"
 [node name="YValue" type="TextEdit" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
-text = "5"
+text = "10"
 scroll_fit_content_height = true
 
 [node name="Z" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
@@ -77,7 +77,7 @@ text = "Z"
 [node name="ZValue" type="TextEdit" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
-text = "20"
+text = "25"
 scroll_fit_content_height = true
 
 [node name="SetSize" type="Button" parent="Controls/TabContainer/Setup/VBoxContainer"]

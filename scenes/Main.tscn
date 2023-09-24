@@ -99,14 +99,11 @@ custom_minimum_size = Vector2(360, 2.08165e-12)
 layout_mode = 2
 
 [node name="Proto Selector" type="ScrollContainer" parent="Container/Options"]
-clip_contents = false
 custom_minimum_size = Vector2(256, 2.08165e-12)
 layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Container/Options/Proto Selector"]
-custom_minimum_size = Vector2(360, 2.08165e-12)
 layout_mode = 2
-size_flags_vertical = 3
 theme_override_constants/separation = 512
 
 [node name="History" type="ScrollContainer" parent="Container/Options"]
@@ -136,4 +133,6 @@ text = "redo  >"
 [connection signal="auto_collapse_toggled" from="Container/Controls" to="Container/Map" method="set_auto_collapse"]
 [connection signal="show_axes_toggled" from="Container/Controls" to="Container/Map" method="toggle_axes"]
 [connection signal="size_set" from="Container/Controls" to="Container/Map" method="generate_slots"]
+[connection signal="z_changed" from="Container/Controls" to="Container/Map" method="z_changed"]
+[connection signal="slot_selected" from="Container/Map" to="." method="_on_map_slot_selected"]
 [connection signal="pressed" from="Container/Options/History/VBoxContainer/HBoxContainer/Undo" to="Container/Map" method="_on_undo_pressed"]

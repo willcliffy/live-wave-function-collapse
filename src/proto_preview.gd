@@ -25,7 +25,7 @@ func set_proto(proto_name: String):
 	if mesh:
 		mesh.queue_free()
 
-	var proto_datum = WFC.proto_data[proto_name]
+	var proto_datum =  WfcCollapser.WFCUtils.proto_data[proto_name]
 	var mesh_instance = WFC.meshes.instantiate().get_node(proto_datum["mesh_name"])
 	var mesh_rotation = Vector3(0, proto_datum["mesh_rotation"] * PI/2, 0)
 

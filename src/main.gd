@@ -7,7 +7,7 @@ extends Control
 
 
 const SIZE = Vector3(20, 5, 20)
-const UI_SCALE_OVERRIDE =  Vector2(.75, .75)
+const UI_SCALE_OVERRIDE =  Vector2(0.9, 0.9)
 
 var current_previews = []
 
@@ -27,6 +27,7 @@ func _on_map_slot_selected(selected_slot: Area3D):
 			preview.pressed.connect(
 				func():
 					selected_slot.collapse(possibility)
+					MAP.collapse(selected_slot.position, possibility)
 					clear_options_pane()
 					PROTO_OPTIONS.add_child(button)
 			)
