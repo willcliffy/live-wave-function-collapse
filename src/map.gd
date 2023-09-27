@@ -38,30 +38,15 @@ func generate_slots(input_map_size: Vector3):
 			# print("superposition at ", superposition.position, " collapsed to ", superposition.collapsed_to)
 			var slot = _get_slot(superposition.position)
 			slot.collapse(superposition.collapsed_to)
-			if len(last_collapsed) > 0:
-				for l in last_collapsed:
-					l.decrease_last_collapsed_brightness(0.5)
-				if len(last_collapsed) > 3:
-					var t = last_collapsed.pop_back() 
-					t.clear_last_collapsed()
-			last_collapsed.push_front(slot)
 			slot.set_last_collapsed()
-	)
-	wave_function.superposition_collapsed_release.connect(
-		func(superposition: WfcCollapser.Superposition):
-			#_get_slot(superposition.position).clear_last_collapsed()
-			pass
+			last_collapsed.push_front(slot)
+			if len(last_collapsed) > 3:
+				last_collapsed.pop_back().clear_last_collapsed()
 	)
 	wave_function.superposition_constrained.connect(
 		func(superposition: WfcCollapser.Superposition):
 			#print("superposition at ", superposition.position, " constrained to entropy ", len(superposition.get_possibilities()))
 			_get_slot(superposition.position).constrain(superposition.get_possibilities())
-	)
-	wave_function.superposition_constrained_release.connect(
-		func(superposition: WfcCollapser.Superposition):
-			pass
-			#print("superposition at ", superposition.position, " RELEASED")
-			#_get_slot(superposition.position).release_constrain_animation()
 	)
 	wave_function.superposition_overcollapsed.connect(
 		func(position: Vector3):
