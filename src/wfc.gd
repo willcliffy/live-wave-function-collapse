@@ -28,13 +28,10 @@ func _ready():
 		print("Failed to parse JSON.")
 		return
 
-	exit_thread = false
-	mutex = Mutex.new()
+	stop_thread = false
 	runner = Semaphore.new()
 	thread = Thread.new()
 	thread.start(_wfc_collapser_run)
-	
-	map_mutex = Mutex.new()
 
 
 func _direction_index(from: Vector3, to: Vector3, tolerance: float = 0.1) -> int:
@@ -71,17 +68,10 @@ func proto_uncapped(proto: String, direction: Vector3 = Vector3.UP) -> bool:
 
 signal auto_collapse_toggled(value: bool)
 
-var slot_scene = preload("res://scenes/Slot.tscn")
-
 var map_size
-
-var currently_selected
-var last_collapsed
 
 var slot_matrix = []
 var slots = []
-
-var map_mutex: Mutex
 
 func generate_slots(input_map_size: Vector3):
 	map_size = input_map_size
@@ -90,19 +80,11 @@ func generate_slots(input_map_size: Vector3):
 		for x in range(map_size.x):
 			slot_matrix[y].append([])
 			for z in range(map_size.z):
-				var slot = slot_scene.instantiate()
+				var slot = Slot.new()
 				slot.position = Vector3(x, y, z)
-				slot.selected.connect(
-					func():
-						currently_selected = slot
-						for s in slots:
-							if s.name != slot.name:
-								s.deselect()
-				)
-				slot.expand(WFC.proto_data.keys())
+				slot.expand(proto_data.keys())
 				slots.append(slot)
 				slot_matrix[y][x].append(slot)
-	return slots
 
 
 func apply_custom_constraints():
@@ -132,11 +114,6 @@ func apply_custom_constraints():
 					propagate(slot.position, slot.get_possibilities())
 
 
-func z_changed(value):
-	for slot in slots:
-		slot.z_changed(value)
-
-
 func get_neighbors(slot_position: Vector3):
 	var directions = []
 
@@ -162,12 +139,12 @@ func get_neighbors(slot_position: Vector3):
 	return result
 
 
-func select_lowest_entropy() -> Area3D:
+func select_lowest_entropy() -> Slot:
 	var lowest_entropy_value = 99999
 	var lowest_entropy_slots
 
 	for slot in slots:
-		var entropy = slot.get_entropy()
+		var entropy = slot.entropy()
 		if entropy <= 1 or entropy > lowest_entropy_value:
 			continue
 		if entropy < lowest_entropy_value:
@@ -179,104 +156,123 @@ func select_lowest_entropy() -> Area3D:
 	if not lowest_entropy_slots:
 		return null
 
-	var i = randi() % len(lowest_entropy_slots)
-	var lowest_entropy_slot = lowest_entropy_slots[i]
-	lowest_entropy_slot.set_selected()
-	return lowest_entropy_slot
+	return lowest_entropy_slots[randi() % len(lowest_entropy_slots)]
 
 
-func propagate(constrained_position: Vector3, constrained_possibilities: Array, depth: int = 0):
-	var neighbors = get_neighbors(constrained_position)
+func propagate(slot: Slot, depth: int = 0):
+	if slot == null:
+		print("null slot!!")
+	var neighbors = get_neighbors(slot.position)
 	for neighbor in neighbors:
-		if neighbor.is_collapsed: continue
+		if neighbor == null:
+			print("null neighbor! ", neighbors)
+		if neighbor.is_collapsed(): continue
 		var new_neighbor_possibilities = []
-		for constrained_proto in constrained_possibilities:
-			for neighbor_possibility in neighbor.get_possibilities():
-				if neighbor_possibility in new_neighbor_possibilities: 
+		for proto in slot.possibilities:
+			for neighbor_proto in neighbor.possibilities:
+				if neighbor_proto in new_neighbor_possibilities: 
 					continue
-				if WFC.protos_compatible(
-					constrained_proto,
-					constrained_position,
-					neighbor_possibility,
-					neighbor._position
+				if protos_compatible(
+					proto,
+					slot.position,
+					neighbor_proto,
+					neighbor.position
 				):
-					new_neighbor_possibilities.append(neighbor_possibility)
-		if len(new_neighbor_possibilities) != len(neighbor.get_possibilities()):
+					new_neighbor_possibilities.append(neighbor_proto)
+		if len(new_neighbor_possibilities) != len(neighbor.possibilities):
+			if len(neighbor.possibilities) < len(new_neighbor_possibilities):
+				print("reduced neighbor ", neighbor.position, " to ", len(new_neighbor_possibilities), " from ", len(neighbor.possibilities))
 			if len(new_neighbor_possibilities) == 0:
-				neighbor.overconstrained()
-				auto_collapse_toggled.emit(false)
+				autocollapse_toggled = true
 				break
 
 			neighbor.constrain(new_neighbor_possibilities)
-			propagate(neighbor._position, new_neighbor_possibilities, depth + 1)
+			propagate(neighbor)
+			constrained_slots_queued.append(neighbor)
+
 			if depth > 1000:
-				print("depth big ", depth, " ", len(neighbor._possibilities) == len(neighbor.get_possibilities()), " ", len(new_neighbor_possibilities) - len(neighbor.get_possibilities()))
-
-
-func set_last_collapsed(slot: Area3D):
-	if last_collapsed:
-		last_collapsed.clear_last_collapsed()
-	last_collapsed = slot
-	last_collapsed.set_last_collapsed()
+				print("depth big ", depth)
 
 
 # ---
 
-var mutex: Mutex
+class Slot:
+	var position: Vector3
+	var possibilities: Array
+
+	func expand(protos: Array):
+		possibilities = protos
+	
+	func collapse(proto: String = ""):
+		if proto.is_empty():
+			possibilities = [possibilities[randi() % len(possibilities)]]
+		else:
+			possibilities = [proto]
+
+	func constrain(protos: Array):
+		possibilities = protos
+
+	func entropy() -> int:
+		return len(possibilities)
+	
+	func is_collapsed() -> bool:
+		return entropy() <= 1
+
+
+signal slot_constrained(slot: Vector3, protos: Array)
+
+const COLLAPSE_SPEED = 2
+
 var runner: Semaphore
 var thread: Thread
-var exit_thread := false
-var working := true
+var stop_thread := false
 
-var collapsed_slot: Area3D
-var collapsed_slot_proto: String
+var autocollapse := false
+var autocollapse_toggled := false
+
+var constrained_slots_queued = []
+
+
+func _process(_delta):
+	while len(constrained_slots_queued) > 0:
+		var slot = constrained_slots_queued.pop_front()
+		slot_constrained.emit(slot.position, slot.possibilities)
+
+	if autocollapse:
+		if autocollapse_toggled:
+			autocollapse = false
+			autocollapse_toggled = false
+			auto_collapse_toggled.emit(false)
+			print("autocollapse toggled!")
+		runner.post()
+
 
 func _wfc_collapser_run():
 	while true:
-		runner.wait() # Wait until posted.
+		runner.wait()
 
-		mutex.lock()
-		var should_exit = exit_thread
-		mutex.unlock()
-
-		if should_exit:
+		if stop_thread:
 			break
 
-		mutex.lock()
-		var proto = collapsed_slot._possibilities[randi() % len(collapsed_slot._possibilities)]
-		collapsed_slot.collapse(proto)
-		propagate(collapsed_slot._position, [proto])
-		mutex.unlock()
+		for i in range(COLLAPSE_SPEED):
+			var selected = select_lowest_entropy()
+			if selected == null:
+				autocollapse_toggled = true
+				return
 
 
-func is_ready():
-	if not mutex.try_lock():
-		#print("not ready - still locked")
-		return false
-
-	mutex.unlock()
-	return true
+			selected.collapse()
+			constrained_slots_queued.append(selected)
+			print("explicitly collapsed ", selected.position, " to ", selected.possibilities)
+			propagate(selected)
 
 
-func collapse(slot: Area3D = null, proto: String = String()):
-	mutex.lock()
-	if slot == null:
-		var slot_selected = select_lowest_entropy()
-		if slot_selected == null:
-			auto_collapse_toggled.emit(false)
-			mutex.unlock()
-			return
-		collapsed_slot = slot_selected
-	else:
-		collapsed_slot = slot
-	collapsed_slot_proto = proto
-	mutex.unlock()
-	runner.post()
+
+func toggle_autocollapse(value):
+	autocollapse = value
 
 
 func wfc_stop():
-	mutex.lock()
-	exit_thread = true
-	mutex.unlock()
+	stop_thread = true
 	runner.post()
 	thread.wait_to_finish()

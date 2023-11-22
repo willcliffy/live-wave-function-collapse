@@ -13,14 +13,10 @@ var is_expanding = false
 var current_z: int = 0
 var _last_possibilities: Array = []
 var _possibilities: Array = []
-var _position: Vector3
 
 var _collapsed_to: String
 
 var constrain_time_left = CONSTRAIN_ANIMATION_DURATION
-
-func _ready():
-	_position = position
 
 
 func _process(delta):

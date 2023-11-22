@@ -14,7 +14,6 @@ signal size_set(size: Vector3)
 
 func _on_z_value_changed(value):
 	zselector.get_node("Value").text = str(value)
-	WFC.z_changed(value)
 
 
 func _on_show_axes_toggled(button_pressed):
