@@ -1,47 +1,37 @@
 extends Control
 
-@onready var proto_preview_scene = preload("res://scenes/ProtoPreview.tscn")
+@onready var controls = $Container/Controls
 
-@onready var MAP = $Container/Map
-@onready var PROTO_OPTIONS = $"Container/Options/Proto Selector/VBoxContainer"
+@export
+var DEFAULT_MAP_SIZE = Vector3(10, 4, 10)
 
-
-const SIZE = Vector3(20, 5, 20)
-const UI_SCALE_OVERRIDE =  Vector2(.75, .75)
-
-var current_previews = []
+@export
+var AUTO_RUN = true
 
 
 func _ready():
-	scale = UI_SCALE_OVERRIDE
+	controls.set_initialize_values(DEFAULT_MAP_SIZE)
+
+	if not AUTO_RUN:
+		return
+
+	controls._on_initialize_pressed()
+
+	var start_timer = Timer.new()
+	start_timer.autostart = false
+	start_timer.one_shot = true
+	start_timer.timeout.connect(controls._on_start_pressed)
+	add_child(start_timer)
+	WFC.map_initialized.connect(start_timer.start)
+
+	var collapse_timer = Timer.new()
+	collapse_timer.autostart = false
+	collapse_timer.one_shot = true
+	collapse_timer.timeout.connect(controls._on_finalize_pressed)
+	add_child(collapse_timer)
+	WFC.map_collapsed.connect(collapse_timer.start)
 
 
-func _on_map_slot_selected(selected_slot: Area3D):
-	clear_options_pane()
-
-	for possibility in selected_slot.get_possibilities():
-		var preview = proto_preview_scene.instantiate()
-		var button = Button.new()
-		if possibility != "p-1":
-			preview.set_proto(possibility)
-			preview.pressed.connect(
-				func():
-					selected_slot.collapse(possibility)
-					clear_options_pane()
-					PROTO_OPTIONS.add_child(button)
-			)
-		button.add_child(preview)
-		PROTO_OPTIONS.add_child(button)
-		current_previews.append(preview)
-
-
-func clear_options_pane():
-	current_previews = []
-	for child in PROTO_OPTIONS.get_children():
-		PROTO_OPTIONS.remove_child(child)
-
-
-func _on_auto_collapse_toggled(button_pressed):
-	MAP.set_auto_collapse(button_pressed)
-	if button_pressed:
-		clear_options_pane()
+func _on_map_viewer_reload_scene(_scene_filename):
+	#get_tree().change_scene_to_file(scene_filename)
+	pass

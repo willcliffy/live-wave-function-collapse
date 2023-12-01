@@ -1,12 +1,12 @@
 [gd_scene load_steps=4 format=3 uid="uid://b0lgp1ecd4rfu"]
 
-[ext_resource type="Script" path="res://scenes/Controls.gd" id="1_17l8h"]
+[ext_resource type="Script" path="res://src/controls.gd" id="1_mx17x"]
 
-[sub_resource type="Theme" id="Theme_rnk67"]
-default_font_size = 10
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_eb7wt"]
+bg_color = Color(0, 0.545098, 0.239216, 1)
 
-[sub_resource type="Theme" id="Theme_e1tbk"]
-default_font_size = 10
+[sub_resource type="Theme" id="Theme_q16t2"]
+Button/styles/normal = SubResource("StyleBoxFlat_eb7wt")
 
 [node name="Controls" type="Control"]
 custom_minimum_size = Vector2(475, 0)
@@ -16,7 +16,7 @@ anchor_bottom = 1.0
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-script = ExtResource("1_17l8h")
+script = ExtResource("1_mx17x")
 
 [node name="Controls" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -41,194 +41,79 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 
 [node name="Info_SizeSelector" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer"]
+visible = false
 layout_mode = 2
 text = "(i) Set the bounds of the space which the generator will create. The generator does not yet support infinite terrain. Note that you cannot change this size later without resetting the map."
 autowrap_mode = 2
 
-[node name="SizeSelector" type="HBoxContainer" parent="Controls/TabContainer/Setup/VBoxContainer"]
+[node name="Info_CustomConstraints" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer"]
+visible = false
+layout_mode = 2
+text = "(i) Some custom constraints have been created that only allow \"capped\" prototypes on the top and sides of the bounding space. Note that this only works for the built-in prototype set and may need changes when prototypes are added or changed."
+autowrap_mode = 2
+
+[node name="InitializeValues" type="HBoxContainer" parent="Controls/TabContainer/Setup/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="X" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
+[node name="X" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer/InitializeValues"]
 layout_mode = 2
 text = "X"
 
-[node name="XValue" type="TextEdit" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
+[node name="XValue" type="TextEdit" parent="Controls/TabContainer/Setup/VBoxContainer/InitializeValues"]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "20"
 scroll_fit_content_height = true
 
-[node name="Y" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
+[node name="Y" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer/InitializeValues"]
 layout_mode = 2
 text = "Y"
 
-[node name="YValue" type="TextEdit" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
+[node name="YValue" type="TextEdit" parent="Controls/TabContainer/Setup/VBoxContainer/InitializeValues"]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 text = "5"
 scroll_fit_content_height = true
 
-[node name="Z" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
+[node name="Z" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer/InitializeValues"]
 layout_mode = 2
 text = "Z"
 
-[node name="ZValue" type="TextEdit" parent="Controls/TabContainer/Setup/VBoxContainer/SizeSelector"]
+[node name="ZValue" type="TextEdit" parent="Controls/TabContainer/Setup/VBoxContainer/InitializeValues"]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
-text = "20"
+text = "30"
 scroll_fit_content_height = true
 
-[node name="SetSize" type="Button" parent="Controls/TabContainer/Setup/VBoxContainer"]
+[node name="Initialize" type="Button" parent="Controls/TabContainer/Setup/VBoxContainer"]
 layout_mode = 2
-text = "Set Size
+size_flags_vertical = 3
+text = "Initialize"
+
+[node name="Start" type="Button" parent="Controls/TabContainer/Setup/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = SubResource("Theme_q16t2")
+disabled = true
+text = "Start"
+
+[node name="Finalize" type="Button" parent="Controls/TabContainer/Setup/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = SubResource("Theme_q16t2")
+disabled = true
+text = "Finalize
 "
 
-[node name="Info_CustomConstraints" type="Label" parent="Controls/TabContainer/Setup/VBoxContainer"]
+[node name="Reset" type="Button" parent="Controls/TabContainer/Setup/VBoxContainer"]
 layout_mode = 2
-text = "(i) Some custom constraints have been created that only allow \"capped\" prototypes on the top and sides of the bounding space. Note that this only works for the built-in prototype set and may need changes when prototypes are added or changed."
-autowrap_mode = 2
-
-[node name="CustomConstraints" type="Button" parent="Controls/TabContainer/Setup/VBoxContainer"]
-layout_mode = 2
+size_flags_vertical = 3
 disabled = true
-text = "Apply Custom Constraints"
+text = "Reset (NYI)"
 
-[node name="Continue" type="Button" parent="Controls/TabContainer/Setup/VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 10
-disabled = true
-text = "Continue"
-
-[node name="Collapse" type="MarginContainer" parent="Controls/TabContainer"]
-visible = false
-layout_mode = 2
-
-[node name="Collapse" type="VBoxContainer" parent="Controls/TabContainer/Collapse"]
-custom_minimum_size = Vector2(400, 950)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-
-[node name="Toggles" type="VBoxContainer" parent="Controls/TabContainer/Collapse/Collapse"]
-layout_mode = 2
-size_flags_vertical = 4
-
-[node name="ZSelect" type="HBoxContainer" parent="Controls/TabContainer/Collapse/Collapse/Toggles"]
-layout_mode = 2
-size_flags_vertical = 4
-
-[node name="Label" type="Label" parent="Controls/TabContainer/Collapse/Collapse/Toggles/ZSelect"]
-layout_mode = 2
-size_flags_horizontal = 2
-text = "Z
-"
-
-[node name="Z" type="HSlider" parent="Controls/TabContainer/Collapse/Collapse/Toggles/ZSelect"]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-focus_mode = 1
-rounded = true
-
-[node name="Value" type="Label" parent="Controls/TabContainer/Collapse/Collapse/Toggles/ZSelect"]
-layout_mode = 2
-size_flags_horizontal = 10
-text = "0"
-
-[node name="ShowAxes" type="HBoxContainer" parent="Controls/TabContainer/Collapse/Collapse/Toggles"]
-layout_mode = 2
-size_flags_vertical = 0
-
-[node name="Label" type="Label" parent="Controls/TabContainer/Collapse/Collapse/Toggles/ShowAxes"]
-layout_mode = 2
-text = "Show Axes"
-
-[node name="CheckButton" type="CheckButton" parent="Controls/TabContainer/Collapse/Collapse/Toggles/ShowAxes"]
-layout_mode = 2
-size_flags_horizontal = 10
-button_pressed = true
-
-[node name="ShowZGrid" type="HBoxContainer" parent="Controls/TabContainer/Collapse/Collapse/Toggles"]
-visible = false
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Controls/TabContainer/Collapse/Collapse/Toggles/ShowZGrid"]
-layout_mode = 2
-text = "Show Z Grid"
-
-[node name="CheckButton" type="CheckButton" parent="Controls/TabContainer/Collapse/Collapse/Toggles/ShowZGrid"]
-layout_mode = 2
-size_flags_horizontal = 10
-
-[node name="SelectNext" type="Button" parent="Controls/TabContainer/Collapse/Collapse"]
-visible = false
-layout_mode = 2
-size_flags_vertical = 4
-text = "Select Lowest Entropy"
-
-[node name="CollapseSelected" type="Button" parent="Controls/TabContainer/Collapse/Collapse"]
-visible = false
-layout_mode = 2
-size_flags_vertical = 4
-text = "Collapse Selected"
-
-[node name="CollapseRandom" type="Button" parent="Controls/TabContainer/Collapse/Collapse"]
-visible = false
-layout_mode = 2
-text = "Collapse Lowest Entropy"
-
-[node name="Platform" type="Button" parent="Controls/TabContainer/Collapse/Collapse"]
-visible = false
-layout_mode = 2
-text = "Start With Central Platform"
-
-[node name="AutoCollapse" type="HBoxContainer" parent="Controls/TabContainer/Collapse/Collapse"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Controls/TabContainer/Collapse/Collapse/AutoCollapse"]
-layout_mode = 2
-text = "Auto Collapse"
-
-[node name="CheckButton" type="CheckButton" parent="Controls/TabContainer/Collapse/Collapse/AutoCollapse"]
-layout_mode = 2
-size_flags_horizontal = 10
-
-[node name="Platforms" type="HBoxContainer" parent="Controls/TabContainer/Collapse/Collapse"]
-visible = false
-layout_mode = 2
-
-[node name="LineEdit" type="LineEdit" parent="Controls/TabContainer/Collapse/Collapse/Platforms"]
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Controls/TabContainer/Collapse/Collapse/Platforms"]
-layout_mode = 2
-
-[node name="Button" type="Button" parent="Controls/TabContainer/Collapse/Collapse/Platforms/VBoxContainer"]
-layout_mode = 2
-theme = SubResource("Theme_rnk67")
-text = "⏶"
-
-[node name="Button2" type="Button" parent="Controls/TabContainer/Collapse/Collapse/Platforms/VBoxContainer"]
-layout_mode = 2
-theme = SubResource("Theme_e1tbk")
-text = "⏷"
-
-[node name="Export" type="VBoxContainer" parent="Controls/TabContainer"]
-visible = false
-layout_mode = 2
-
-[node name="ResetButton" type="Button" parent="Controls"]
-layout_mode = 2
-size_flags_vertical = 8
-disabled = true
-text = "RESET (WIP)"
-
-[connection signal="pressed" from="Controls/TabContainer/Setup/VBoxContainer/SetSize" to="." method="_on_set_size_pressed"]
-[connection signal="pressed" from="Controls/TabContainer/Setup/VBoxContainer/CustomConstraints" to="." method="_on_apply_custom_constraints_pressed"]
-[connection signal="pressed" from="Controls/TabContainer/Setup/VBoxContainer/Continue" to="." method="_on_continue_pressed"]
-[connection signal="value_changed" from="Controls/TabContainer/Collapse/Collapse/Toggles/ZSelect/Z" to="." method="_on_z_value_changed"]
-[connection signal="toggled" from="Controls/TabContainer/Collapse/Collapse/Toggles/ShowAxes/CheckButton" to="." method="_on_show_axes_toggled"]
-[connection signal="toggled" from="Controls/TabContainer/Collapse/Collapse/AutoCollapse/CheckButton" to="." method="_on_auto_collapse_toggled"]
+[connection signal="pressed" from="Controls/TabContainer/Setup/VBoxContainer/Initialize" to="." method="_on_initialize_pressed"]
+[connection signal="pressed" from="Controls/TabContainer/Setup/VBoxContainer/Start" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="Controls/TabContainer/Setup/VBoxContainer/Finalize" to="." method="_on_finalize_pressed"]
+[connection signal="pressed" from="Controls/TabContainer/Setup/VBoxContainer/Reset" to="." method="_on_reset_pressed"]

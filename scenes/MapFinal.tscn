@@ -1,0 +1,68 @@
+[gd_scene load_steps=15 format=3 uid="uid://bypiui5y3d6m3"]
+
+[ext_resource type="Script" path="res://src/map_final.gd" id="1_qlntn"]
+[ext_resource type="Texture2D" uid="uid://b04dgol8f641u" path="res://resources/belfast_sunset_puresky_2k.exr" id="2_vlusk"]
+[ext_resource type="Shader" uid="uid://dv44gu5c61tat" path="res://resources/grass_shader.tres" id="4_fb8fq"]
+[ext_resource type="Script" path="res://src/camera_base.gd" id="4_ufv21"]
+[ext_resource type="ArrayMesh" uid="uid://ciyy6eewcduxh" path="res://resources/grass.obj" id="5_i6wkq"]
+[ext_resource type="Script" path="res://addons/cliff_scatter/src/scatter.gd" id="14_dy8bb"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_crdv1"]
+panorama = ExtResource("2_vlusk")
+
+[sub_resource type="Sky" id="Sky_ni0vf"]
+sky_material = SubResource("PanoramaSkyMaterial_crdv1")
+
+[sub_resource type="Environment" id="Environment_ic6rf"]
+background_mode = 2
+sky = SubResource("Sky_ni0vf")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_2jsjw"]
+fractal_type = 0
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_b6sjv"]
+noise = SubResource("FastNoiseLite_2jsjw")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rxb0j"]
+render_priority = 0
+shader = ExtResource("4_fb8fq")
+shader_parameter/Wind_Speed = Vector2(0.1, 0.1)
+shader_parameter/Wind_Intensity = Vector3(0.01, 0, 0.01)
+shader_parameter/ColorParameter = Color(0.039216, 0.196078, 0, 1)
+shader_parameter/ColorParameter2 = Color(0, 0.490196, 0.078431, 1)
+shader_parameter/wind = SubResource("NoiseTexture2D_b6sjv")
+
+[sub_resource type="MultiMesh" id="MultiMesh_tl775"]
+transform_format = 1
+mesh = ExtResource("5_i6wkq")
+
+[sub_resource type="BoxMesh" id="BoxMesh_h0jfi"]
+
+[node name="MapFinal" type="Node3D"]
+process_mode = 1
+script = ExtResource("1_qlntn")
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_ic6rf")
+
+[node name="CameraBase" type="Node3D" parent="."]
+transform = Transform3D(1, -5.48843e-16, 2.85709e-16, 2.85709e-16, 0.819152, 0.573576, -5.48843e-16, -0.573576, 0.819152, 2.08165e-12, 2.08165e-12, 2.08165e-12)
+script = ExtResource("4_ufv21")
+
+[node name="Camera" type="Camera3D" parent="CameraBase"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 15)
+
+[node name="Modules" type="Node3D" parent="."]
+
+[node name="CliffScatter" type="MultiMeshInstance3D" parent="."]
+material_override = SubResource("ShaderMaterial_rxb0j")
+multimesh = SubResource("MultiMesh_tl775")
+script = ExtResource("14_dy8bb")
+base_noise_threshold = 0.5
+object_scale = 1.4
+tile_resolution = 32.0
+max_angle_degrees = 60.0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("BoxMesh_h0jfi")

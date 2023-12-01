@@ -12,18 +12,21 @@ config_version=5
 
 config/name="LiveWFC"
 run/main_scene="res://scenes/Main.tscn"
-config/features=PackedStringArray("4.1", "Forward Plus")
+config/features=PackedStringArray("4.2", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
 WFC="*res://src/wfc.gd"
-Logger="*res://src/logger.gd"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/cliff_scatter/plugin.cfg", "res://addons/proton_scatter/plugin.cfg")
 
 [input]
 

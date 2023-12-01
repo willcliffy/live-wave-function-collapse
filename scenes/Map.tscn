@@ -1,77 +1,45 @@
-[gd_scene load_steps=12 format=3 uid="uid://dkj8wu5cotccu"]
+[gd_scene load_steps=10 format=3 uid="uid://ct527swuhke66"]
 
-[ext_resource type="Script" path="res://src/map.gd" id="1_fw8f6"]
-[ext_resource type="Texture2D" uid="uid://dgnsig77e0k6x" path="res://belfast_sunset_puresky_2k.exr" id="2_e51py"]
-[ext_resource type="PackedScene" uid="uid://5krxgecv4iw2" path="res://axes.blend" id="2_r8ofa"]
-[ext_resource type="Script" path="res://src/CameraBase.gd" id="4_6i0uu"]
+[ext_resource type="Script" path="res://src/map.gd" id="1_eb7kq"]
+[ext_resource type="PackedScene" uid="uid://bp5abghmivubr" path="res://blend/axes.blend" id="2_1h7nm"]
+[ext_resource type="Script" path="res://src/camera_base.gd" id="3_1f725"]
+[ext_resource type="Material" uid="uid://bihurpo4dmg1y" path="res://resources/grass_material.tres" id="5_c2uje"]
+[ext_resource type="ArrayMesh" uid="uid://ciyy6eewcduxh" path="res://resources/grass.obj" id="6_xsr6j"]
 
-[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_crdv1"]
-panorama = ExtResource("2_e51py")
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_l4bq1"]
+sky_energy_multiplier = 10.0
 
-[sub_resource type="Sky" id="Sky_ni0vf"]
-sky_material = SubResource("PanoramaSkyMaterial_crdv1")
+[sub_resource type="Sky" id="Sky_4ode6"]
+sky_material = SubResource("ProceduralSkyMaterial_l4bq1")
 
-[sub_resource type="Environment" id="Environment_ic6rf"]
+[sub_resource type="Environment" id="Environment_fqcsp"]
 background_mode = 2
-sky = SubResource("Sky_ni0vf")
+sky = SubResource("Sky_4ode6")
 
-[sub_resource type="World3D" id="World3D_h3dty"]
-environment = SubResource("Environment_ic6rf")
+[sub_resource type="MultiMesh" id="MultiMesh_yhady"]
+use_custom_data = true
+mesh = ExtResource("6_xsr6j")
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_mrwfr"]
+[node name="Map" type="Node3D"]
+process_mode = 1
+script = ExtResource("1_eb7kq")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ldscb"]
-transparency = 1
-blend_mode = 1
-albedo_color = Color(0, 0, 1, 0.611765)
-metallic_specular = 0.0
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_fqcsp")
 
-[sub_resource type="BoxMesh" id="BoxMesh_47ojj"]
-material = SubResource("StandardMaterial3D_ldscb")
-size = Vector3(1000, 1, 1000)
-
-[node name="Map" type="SubViewportContainer"]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -256.0
-offset_top = -256.0
-offset_right = 256.0
-offset_bottom = 256.0
-grow_horizontal = 2
-grow_vertical = 2
-focus_mode = 2
-mouse_filter = 0
-script = ExtResource("1_fw8f6")
-
-[node name="Viewport" type="SubViewport" parent="."]
-world_3d = SubResource("World3D_h3dty")
-handle_input_locally = false
-physics_object_picking = true
-size = Vector2i(1080, 1080)
-render_target_update_mode = 4
-
-[node name="Scene" type="Node3D" parent="Viewport"]
-
-[node name="Environment" type="WorldEnvironment" parent="Viewport/Scene"]
-environment = SubResource("Environment_ic6rf")
-
-[node name="Mesh" type="MeshInstance3D" parent="Viewport/Scene"]
-visible = false
-mesh = SubResource("CapsuleMesh_mrwfr")
-
-[node name="Grid" type="MeshInstance3D" parent="Viewport/Scene"]
-visible = false
-mesh = SubResource("BoxMesh_47ojj")
-
-[node name="Axes" parent="Viewport/Scene" instance=ExtResource("2_r8ofa")]
+[node name="Axes" parent="." instance=ExtResource("2_1h7nm")]
 transform = Transform3D(1, 0, -1.5246e-23, -1.5246e-23, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
 
-[node name="CameraBase" type="Node3D" parent="Viewport/Scene"]
+[node name="CameraBase" type="Node3D" parent="."]
 transform = Transform3D(1, -5.48843e-16, 2.85709e-16, 2.85709e-16, 0.819152, 0.573576, -5.48843e-16, -0.573576, 0.819152, 2.08165e-12, 2.08165e-12, 2.08165e-12)
-script = ExtResource("4_6i0uu")
+script = ExtResource("3_1f725")
 
-[node name="Camera" type="Camera3D" parent="Viewport/Scene/CameraBase"]
+[node name="Camera" type="Camera3D" parent="CameraBase"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 15)
+current = true
+
+[node name="Grass" type="MultiMeshInstance3D" parent="."]
+material_override = ExtResource("5_c2uje")
+multimesh = SubResource("MultiMesh_yhady")
+
+[node name="Modules" type="Node3D" parent="."]
