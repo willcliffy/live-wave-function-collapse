@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://bypiui5y3d6m3"]
+[gd_scene load_steps=15 format=3 uid="uid://bypiui5y3d6m3"]
 
 [ext_resource type="Script" path="res://src/map_final.gd" id="1_qlntn"]
 [ext_resource type="Texture2D" uid="uid://b04dgol8f641u" path="res://resources/belfast_sunset_puresky_2k.exr" id="2_vlusk"]
@@ -7,11 +7,11 @@
 [ext_resource type="ArrayMesh" uid="uid://ciyy6eewcduxh" path="res://resources/grass.obj" id="5_i6wkq"]
 [ext_resource type="Script" path="res://addons/cliff_scatter/src/scatter.gd" id="14_dy8bb"]
 
-[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kbw7w"]
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_crdv1"]
 panorama = ExtResource("2_vlusk")
 
 [sub_resource type="Sky" id="Sky_ni0vf"]
-sky_material = SubResource("PanoramaSkyMaterial_kbw7w")
+sky_material = SubResource("PanoramaSkyMaterial_crdv1")
 
 [sub_resource type="Environment" id="Environment_ic6rf"]
 background_mode = 2
@@ -36,12 +36,7 @@ shader_parameter/wind = SubResource("NoiseTexture2D_b6sjv")
 transform_format = 1
 mesh = ExtResource("5_i6wkq")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kmmhp"]
-albedo_color = Color(0.196078, 0.298039, 0.227451, 1)
-
 [sub_resource type="BoxMesh" id="BoxMesh_h0jfi"]
-material = SubResource("StandardMaterial3D_kmmhp")
-size = Vector3(5, 1, 5)
 
 [node name="MapFinal" type="Node3D"]
 process_mode = 1
@@ -51,32 +46,25 @@ script = ExtResource("1_qlntn")
 environment = SubResource("Environment_ic6rf")
 
 [node name="CameraBase" type="Node3D" parent="."]
-transform = Transform3D(0.707107, -0.298836, 0.640856, 0, 0.906307, 0.422618, -0.707107, -0.298836, 0.640856, 2.08165e-12, 2.08165e-12, 2.08165e-12)
+transform = Transform3D(1, -5.48843e-16, 2.85709e-16, 2.85709e-16, 0.819152, 0.573576, -5.48843e-16, -0.573576, 0.819152, 2.08165e-12, 2.08165e-12, 2.08165e-12)
 script = ExtResource("4_ufv21")
 
 [node name="Camera" type="Camera3D" parent="CameraBase"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 15)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 15)
 
 [node name="Modules" type="Node3D" parent="."]
 
 [node name="CliffScatter" type="MultiMeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -1)
-visible = false
 material_override = SubResource("ShaderMaterial_rxb0j")
 multimesh = SubResource("MultiMesh_tl775")
 script = ExtResource("14_dy8bb")
 base_noise_threshold = 0.5
 shape_size = Vector3(12, 6, 12)
 object_scale = 1.4
-max_scale_change = 0.162
-samples_per_meter = 16
-unused_cliff_detection_skirt_meters = 0.25
-cliff_detection_skirt_samples = 4
+tile_resolution = 6.0
+cliff_detection_threshold = null
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 2.5)
 visible = false
 mesh = SubResource("BoxMesh_h0jfi")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.950157, -0.0238537, 0.310857, -0.213351, 0.677299, 0.704094, -0.227338, -0.735322, 0.638451, 0, 7.6578, 13.4371)
