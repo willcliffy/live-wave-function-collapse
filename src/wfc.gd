@@ -77,7 +77,7 @@ func _map_initialized():
 func start_collapse():
 	_autocollapse = true
 	_autocollapse_started = Time.get_unix_time_from_system()
-	print("autocollapse starting: ", Time.get_datetime_string_from_system())
+	print(Time.get_datetime_string_from_system(), " autocollapse starting")
 
 
 func _slot_constrained(slot: Vector3, protos: Array):
@@ -87,7 +87,7 @@ func _slot_constrained(slot: Vector3, protos: Array):
 func stop_collapse():
 	_autocollapse = false
 	var elapsed = Time.get_unix_time_from_system() - _autocollapse_started
-	print("autocollapse stopped: ", Time.get_datetime_string_from_system(), ". Elapsed: ", elapsed)
+	print(Time.get_datetime_string_from_system(), " autocollapse stopped. Elapsed: ", elapsed)
 	map_collapsed.emit()
 
 
@@ -239,31 +239,32 @@ class WfcCollapser:
 				constrained_to_bottom.append(proto)
 
 		# no "uncapped" prototypes along the sides of the space
-		var propagation_queue = []
 		for y in range(map_size.y):
 			for x in range(map_size.x):
 				for z in range(map_size.z):
 					var slot = slot_matrix[y][x][z]
 					if y == 0:
 						slot.constrain_uncapped(Vector3.MODEL_BOTTOM)
+						_propagate(slot)
 					else:
 						slot.remove_all(constrained_to_bottom)
+						_propagate(slot)
 
 					if y == map_size.y - 1:
 						slot.constrain_uncapped(Vector3.MODEL_TOP)
+						_propagate(slot)
 					if x == 0:
 						slot.constrain_uncapped(Vector3.MODEL_RIGHT)
+						_propagate(slot)
 					if x == map_size.x - 1:
 						slot.constrain_uncapped(Vector3.MODEL_LEFT)
+						_propagate(slot)
 					if z == 0:
 						slot.constrain_uncapped(Vector3.MODEL_REAR)
+						_propagate(slot)
 					if z == map_size.z - 1:
 						slot.constrain_uncapped(Vector3.MODEL_FRONT)
-
-					propagation_queue.append(slot)
-
-		for slot in propagation_queue:
-			_propagate(slot)
+						_propagate(slot)
 
 	func _collapse_next() -> bool:
 		var selected = _select_lowest_entropy()
@@ -326,6 +327,15 @@ class WfcCollapser:
 		return result
 
 	func _propagate(slot: Slot):
+		var incomplete = _propagate_recursive(slot)
+		while len(incomplete) > 0:
+			var current = incomplete.pop_front()
+			var inner_incomplete = _propagate_recursive(current)
+			if len(inner_incomplete) > 0:
+				print("skipping some propagations since we've maxed the call stack twice!")
+
+	func _propagate_recursive(slot: Slot, depth: int = 0):
+		var incomplete = [] # Slots that should be propagated, but we can't without hitting recursion limit
 		for neighbor in _get_neighbors(slot.position):
 			if neighbor.is_collapsed(): continue
 			var new_neighbor_possibilities = []
@@ -342,7 +352,14 @@ class WfcCollapser:
 					WFC.stop_collapse.call_deferred()
 					break
 
+				if depth >= 1000:
+					incomplete.append(neighbor)
+					continue
+
 				neighbor.constrain(new_neighbor_possibilities)
 				WFC._slot_constrained.call_deferred(neighbor.position, neighbor.possibilities)
-				_propagate(neighbor)
+				incomplete.append_array(_propagate_recursive(neighbor, depth + 1))
+
+		return incomplete
+
 

@@ -3,7 +3,13 @@ extends Control
 @onready var controls = $Container/Controls
 
 @export
-var DEFAULT_MAP_SIZE = Vector3(10, 4, 10)
+var DEFAULT_MAP_SIZE = Vector3(10, 5, 10)
+
+@export
+var DEFAULT_MAP_CHUNK_SIZE = Vector3(10, 5, 10)
+
+@export
+var DEFAULT_CHUNK_OVERLAP = 2
 
 @export
 var AUTO_RUN = true

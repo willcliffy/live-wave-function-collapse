@@ -40,7 +40,7 @@ func _process(_delta):
 		return
 
 	if last_position.y == map_size.y:
-		print("done creating visual slots")
+		print(Time.get_datetime_string_from_system(), " done creating visual slots")
 		initializing = false
 		WFC.slot_constrained.connect(play_constrain_animation, CONNECT_DEFERRED)
 		WFC.initialize(map_size)

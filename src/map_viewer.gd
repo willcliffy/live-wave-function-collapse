@@ -2,8 +2,11 @@ extends SubViewportContainer
 
 signal reload_scene(scene_filename: String)
 
+var map_size: Vector3
+
 
 func _on_controls_initialize_map(input_map_size):
+	map_size = input_map_size
 	$Viewport/Map.initialize_map(input_map_size)
 
 
@@ -29,7 +32,8 @@ func _on_controls_finalize_map():
 			continue
 		var proto_datum = WFC._proto_data[slot._collapsed_to]
 		var mesh_rotation = Vector3(0, proto_datum["mesh_rotation"] * PI/2, 0)
-		var mesh_instance = modules.get_node(proto_datum["mesh_name"]).duplicate()
+		var mesh_instance: MeshInstance3D = modules.get_node(proto_datum["mesh_name"]).duplicate()
+		
 		mesh_instance.name = "%s" % [slot.position]
 		mesh_instance.position = slot.position
 		mesh_instance.rotation = mesh_rotation 
@@ -38,6 +42,7 @@ func _on_controls_finalize_map():
 		for child in _get_all_children(mesh_instance):
 			child.owner = scene
 
+	scene.get_node("CliffScatter").shape_size = Vector3.ONE + map_size
 	scene.get_node("CameraBase").position = $Viewport/Map/CameraBase.position
 	scene.get_node("CameraBase").rotation = $Viewport/Map/CameraBase.rotation
 	var packed_scene = PackedScene.new()

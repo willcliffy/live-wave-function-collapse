@@ -25,6 +25,7 @@ grow_vertical = 2
 alignment = 1
 
 [node name="Controls" parent="Container" instance=ExtResource("2_uu8hr")]
+visible = false
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 
