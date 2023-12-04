@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://n76oqlgeoegl"]
+
+[ext_resource type="Script" path="res://src/root.gd" id="1_mstuu"]
+[ext_resource type="PackedScene" uid="uid://ct527swuhke66" path="res://scenes/MapBuilder.tscn" id="2_jngyn"]
+
+[node name="Root" type="Node3D"]
+script = ExtResource("1_mstuu")
+
+[node name="MapBuilder" parent="." instance=ExtResource("2_jngyn")]

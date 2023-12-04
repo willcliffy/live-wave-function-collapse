@@ -7,15 +7,15 @@ signal map_collapsed
 const PROTO_FILE_NAME = "prototype_data.json"
 
 var _proto_data: Dictionary
-var valid_neighbors: Dictionary
-
+var _valid_neighbors: Dictionary
 
 var _thread: Thread
 var _collapser: WfcCollapser
 
 var _autocollapse := false
+var _autocollapse_started: float
+
 const AUTOCOLLAPSE_SPEED = 5
-var _autocollapse_started
 
 
 func _ready():
@@ -54,34 +54,34 @@ func _load_proto_data():
 		print("Failed to parse JSON.")
 		return
 
-	valid_neighbors = {}
+	_valid_neighbors = {}
 	for proto in _proto_data:
 		var proto_datum = _proto_data[proto]
-		valid_neighbors[proto] = {}
-		valid_neighbors[proto][Vector3.MODEL_TOP] = proto_datum["valid_neighbours"][pZ]
-		valid_neighbors[proto][Vector3.MODEL_BOTTOM] = proto_datum["valid_neighbours"][nZ]
-		valid_neighbors[proto][Vector3.MODEL_LEFT] = proto_datum["valid_neighbours"][pX]
-		valid_neighbors[proto][Vector3.MODEL_RIGHT] = proto_datum["valid_neighbours"][nX]
-		valid_neighbors[proto][Vector3.MODEL_FRONT] = proto_datum["valid_neighbours"][nY]
-		valid_neighbors[proto][Vector3.MODEL_REAR] = proto_datum["valid_neighbours"][pY]
+		_valid_neighbors[proto] = {}
+		_valid_neighbors[proto][Vector3.MODEL_TOP] = proto_datum["valid_neighbours"][pZ]
+		_valid_neighbors[proto][Vector3.MODEL_BOTTOM] = proto_datum["valid_neighbours"][nZ]
+		_valid_neighbors[proto][Vector3.MODEL_LEFT] = proto_datum["valid_neighbours"][pX]
+		_valid_neighbors[proto][Vector3.MODEL_RIGHT] = proto_datum["valid_neighbours"][nX]
+		_valid_neighbors[proto][Vector3.MODEL_FRONT] = proto_datum["valid_neighbours"][nY]
+		_valid_neighbors[proto][Vector3.MODEL_REAR] = proto_datum["valid_neighbours"][pY]
 
 
-func initialize(input_map_size: Vector3):
-	_collapser.initialize(input_map_size)
+func initialize(input_map_size: Vector3, input_map_chunk_size: Vector3, input_map_chunk_overlap: int):
+	_collapser.initialize(input_map_size, input_map_chunk_size, input_map_chunk_overlap)
 
 
 func _map_initialized():
 	map_initialized.emit()
 
 
+func _slot_constrained(slot: Vector3, protos: Array):
+	slot_constrained.emit(slot, protos)
+
+
 func start_collapse():
 	_autocollapse = true
 	_autocollapse_started = Time.get_unix_time_from_system()
 	print(Time.get_datetime_string_from_system(), " autocollapse starting")
-
-
-func _slot_constrained(slot: Vector3, protos: Array):
-	slot_constrained.emit(slot, protos)
 
 
 func stop_collapse():
@@ -93,15 +93,6 @@ func stop_collapse():
 
 # ---
 
-#func protos_compatible(proto, proto_position, other_proto, other_proto_position) -> bool:
-#	var direction = proto_position.direction_to(other_proto_position)
-#	return other_proto in valid_neighbors[proto][direction]
-
-
-#func proto_uncapped(proto: String, direction: Vector3 = Vector3.MODEL_TOP) -> bool:
-#	return not "p-1" in valid_neighbors[proto][direction]
-
-# ---
 
 class Slot:
 	var position: Vector3
@@ -125,7 +116,7 @@ class Slot:
 	func constrain_uncapped(direction: Vector3):
 		var new_possibilities = []
 		for proto in possibilities:
-			if "p-1" in WFC.valid_neighbors[proto][direction]:
+			if "p-1" in WFC._valid_neighbors[proto][direction]:
 				new_possibilities.append(proto)
 				new_possibilities.append(proto)
 
@@ -177,14 +168,19 @@ class WfcCollapser:
 
 	# game map data
 	var map_size: Vector3
+	var map_chunk_size: Vector3
+	var map_chunk_overlap: float
+
 	var slot_matrix = []
 	var slots = []
 
-	func initialize(input_map_size: Vector3):
+	func initialize(input_map_size: Vector3, input_map_chunk_size: Vector3, input_map_chunk_overlap: int):
 		map_size = input_map_size
+		map_chunk_size = input_map_chunk_size
+		map_chunk_overlap = input_map_chunk_overlap
+
 		var action := Action.new()
 		action.type = ActionType.INITIALIZE
-		action.data = input_map_size
 		queue_action(action)
 
 	func queue_action(action: Action):
@@ -332,7 +328,8 @@ class WfcCollapser:
 			var current = incomplete.pop_front()
 			var inner_incomplete = _propagate_recursive(current)
 			if len(inner_incomplete) > 0:
-				print("skipping some propagations since we've maxed the call stack twice!")
+				print("Warning! Maxed call stack at least twice! Adding ", len(inner_incomplete), " additional propagations to queue of length ", len(incomplete))
+				incomplete.append_array(inner_incomplete)
 
 	func _propagate_recursive(slot: Slot, depth: int = 0):
 		var incomplete = [] # Slots that should be propagated, but we can't without hitting recursion limit
@@ -342,7 +339,7 @@ class WfcCollapser:
 			for neighbor_proto in neighbor.possibilities:
 				for proto in slot.possibilities:
 					var direction = slot.position.direction_to(neighbor.position)
-					if neighbor_proto in WFC.valid_neighbors[proto][direction]:
+					if neighbor_proto in WFC._valid_neighbors[proto][direction]:
 						new_neighbor_possibilities.append(neighbor_proto)
 						break
 
@@ -352,13 +349,13 @@ class WfcCollapser:
 					WFC.stop_collapse.call_deferred()
 					break
 
-				if depth >= 1000:
-					incomplete.append(neighbor)
-					continue
-
 				neighbor.constrain(new_neighbor_possibilities)
 				WFC._slot_constrained.call_deferred(neighbor.position, neighbor.possibilities)
-				incomplete.append_array(_propagate_recursive(neighbor, depth + 1))
+
+				if depth >= 1000:
+					incomplete.append(neighbor)
+				else:
+					incomplete.append_array(_propagate_recursive(neighbor, depth + 1))
 
 		return incomplete
 

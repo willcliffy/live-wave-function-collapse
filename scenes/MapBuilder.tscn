@@ -1,0 +1,45 @@
+[gd_scene load_steps=10 format=3 uid="uid://ct527swuhke66"]
+
+[ext_resource type="Script" path="res://src/map_builder.gd" id="1_lqyqi"]
+[ext_resource type="PackedScene" uid="uid://hd3ark0swsic" path="res://blend/axes.blend" id="2_onn7h"]
+[ext_resource type="Script" path="res://src/camera_base.gd" id="3_j1p4m"]
+[ext_resource type="Material" uid="uid://bihurpo4dmg1y" path="res://resources/grass_material.tres" id="4_cvpat"]
+[ext_resource type="ArrayMesh" uid="uid://ciyy6eewcduxh" path="res://resources/grass.obj" id="5_vrh2k"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_l4bq1"]
+sky_energy_multiplier = 10.0
+
+[sub_resource type="Sky" id="Sky_4ode6"]
+sky_material = SubResource("ProceduralSkyMaterial_l4bq1")
+
+[sub_resource type="Environment" id="Environment_fqcsp"]
+background_mode = 2
+sky = SubResource("Sky_4ode6")
+
+[sub_resource type="MultiMesh" id="MultiMesh_yhady"]
+use_custom_data = true
+mesh = ExtResource("5_vrh2k")
+
+[node name="MapBuilder" type="Node3D"]
+process_mode = 1
+script = ExtResource("1_lqyqi")
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_fqcsp")
+
+[node name="axes" parent="." instance=ExtResource("2_onn7h")]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+
+[node name="CameraBase" type="Node3D" parent="."]
+transform = Transform3D(1, -5.48843e-16, 2.85709e-16, 2.85709e-16, 0.819152, 0.573576, -5.48843e-16, -0.573576, 0.819152, 2.08165e-12, 2.08165e-12, 2.08165e-12)
+script = ExtResource("3_j1p4m")
+
+[node name="Camera" type="Camera3D" parent="CameraBase"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 15)
+current = true
+
+[node name="Grass" type="MultiMeshInstance3D" parent="."]
+material_override = ExtResource("4_cvpat")
+multimesh = SubResource("MultiMesh_yhady")
+
+[node name="Modules" type="Node3D" parent="."]
