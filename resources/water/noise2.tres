@@ -2,7 +2,6 @@
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_81sm8"]
 noise_type = 2
-frequency = 0.05
 fractal_type = 0
 fractal_octaves = 1
 cellular_distance_function = 1

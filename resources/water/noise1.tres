@@ -3,7 +3,6 @@
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_3smxb"]
 noise_type = 2
 seed = 1
-frequency = 0.05
 fractal_type = 0
 fractal_octaves = 2
 cellular_distance_function = 1

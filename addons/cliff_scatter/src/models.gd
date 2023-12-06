@@ -1,6 +1,8 @@
 extends Node
 
 
+class_name ScatterModels
+
 class ScatterFeatureInput:
 	var mesh: Mesh
 	var sample_resolution: int # in samples/meter
@@ -11,7 +13,7 @@ class ScatterFeatureInput:
 	var avoid_cliffs: bool = true
 	var max_normal_radians: float = PI / 2.0
 
-	var scale: float = 2.0
+	var scale: float = 1.0
 	var scale_y: bool = true
 	var scale_delta: float = 0.2
 

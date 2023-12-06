@@ -3,8 +3,6 @@ extends MultiMeshInstance3D
 
 signal rebuild()
 
-const Models = preload("./models.gd")
-
 @export_category("CliffScatterGenerator")
 
 @export_group("General")
@@ -33,6 +31,9 @@ var samples_per_meter: int = 8:
 		samples_per_meter = val
 		if _is_ready: _build_queued = true
 
+@export
+var disabled: bool = true
+
 
 var _build_queued := false
 var _scanning := false
@@ -42,7 +43,7 @@ const RAYCASTS_PER_FRAME = 50
 var scan_queue := []
 
 var space_state: PhysicsDirectSpaceState3D
-var current_scan: Models.TerrainScan
+var current_scan: ScatterModels.TerrainScan
 
 # offset the xz coordinates slightly for raycasts to avoid getting stuck in gaps between modules
 # Maybe one day combine the modules into one mesh and recreate the collision shape, but until then this is fine
@@ -50,6 +51,8 @@ const RAYCAST_XZ_OFFSET := 0.001
 
 
 func _ready():
+	if disabled:
+		return
 	space_state = get_world_3d().get_direct_space_state()
 	rebuild.connect(func(): _build_queued = true)
 	_is_ready = true
@@ -77,13 +80,13 @@ func _physics_process(delta):
 
 func _build_features() -> Array:
 	# populate placement, scale, and rotation maps
-	var grass_feature_input = Models.ScatterFeatureInput.new()
+	var grass_feature_input = ScatterModels.ScatterFeatureInput.new()
 	grass_feature_input.mesh = scatter_mesh
 	grass_feature_input.sample_resolution = samples_per_meter
 	grass_feature_input.placement_noise = base_placement_noise
 	grass_feature_input.placement_noise_threshold = base_placement_noise_threshold
 
-	var grass_feature = Models.ScatterFeature.new()
+	var grass_feature = ScatterModels.ScatterFeature.new()
 	grass_feature.initialize(current_scan, grass_feature_input)
 
 	ResourceSaver.save(grass_feature.placement_map.image, "res://_game/terrain_scans/placement_map.tres")
@@ -96,12 +99,12 @@ func _build_features() -> Array:
 func _begin_terrain_scan():
 	print(Time.get_datetime_string_from_system(), " starting terrain scan")
 
-	current_scan = Models.TerrainScan.new()
+	current_scan = ScatterModels.TerrainScan.new()
 	current_scan.initialize(position, shape_size, samples_per_meter)
 
-	current_scan.height_map = Models.WorldSpaceMapRGB.new()
+	current_scan.height_map = ScatterModels.WorldSpaceMapRGB.new()
 	current_scan.height_map.initialize(current_scan)
-	current_scan.normal_map = Models.WorldSpaceMapRGB.new()
+	current_scan.normal_map = ScatterModels.WorldSpaceMapRGB.new()
 	current_scan.normal_map.initialize(current_scan)
 
 	var x_world_start := position.x
@@ -150,7 +153,7 @@ func _process_place_feature():
 	pass
 
 
-func place_feature(feature: Models.ScatterFeature):
+func place_feature(feature: ScatterModels.ScatterFeature):
 	var instances = []
 	var image_resolution := feature.terrain.height_map.image.get_size()
 	for x in image_resolution.x:

@@ -90,7 +90,7 @@ op_type = 3
 operator = 5
 
 [sub_resource type="VisualShaderNodeFloatConstant" id="VisualShaderNodeFloatConstant_tudds"]
-constant = 0.8
+constant = 0.6
 
 [sub_resource type="VisualShaderNodeTexture2DParameter" id="VisualShaderNodeTexture2DParameter_tmo7b"]
 parameter_name = "Noise1_Fragment"
@@ -315,7 +315,7 @@ void fragment() {
 
 
 // FloatConstant:44
-	float n_out44p0 = 0.800000;
+	float n_out44p0 = 0.600000;
 
 
 // Mix:42
@@ -339,6 +339,7 @@ void fragment() {
 
 }
 "
+graph_offset = Vector2(-569.333, -361.333)
 nodes/vertex/2/node = SubResource("VisualShaderNodeTexture2DParameter_jmv3w")
 nodes/vertex/2/position = Vector2(-1100, 60)
 nodes/vertex/3/node = SubResource("VisualShaderNodeTexture_dwirs")
@@ -424,4 +425,4 @@ nodes/fragment/43/node = SubResource("VisualShaderNodeFloatOp_0jydf")
 nodes/fragment/43/position = Vector2(-960, 280)
 nodes/fragment/44/node = SubResource("VisualShaderNodeFloatConstant_tudds")
 nodes/fragment/44/position = Vector2(20, -100)
-nodes/fragment/connections = PackedInt32Array(6, 0, 7, 2, 9, 0, 7, 0, 10, 0, 9, 0, 11, 0, 9, 2, 14, 0, 13, 2, 15, 0, 13, 0, 17, 0, 15, 0, 16, 0, 15, 2, 7, 0, 20, 0, 13, 0, 20, 1, 23, 0, 0, 1, 24, 0, 0, 3, 25, 0, 9, 1, 26, 0, 15, 1, 2, 0, 27, 0, 28, 0, 27, 2, 29, 0, 30, 0, 33, 0, 35, 0, 30, 0, 37, 0, 37, 0, 38, 2, 35, 0, 38, 0, 30, 0, 38, 1, 39, 0, 33, 0, 34, 0, 41, 0, 30, 0, 41, 2, 41, 0, 39, 0, 38, 0, 42, 0, 27, 0, 42, 1, 42, 0, 0, 0, 22, 0, 43, 1, 43, 0, 27, 1, 43, 0, 0, 5, 20, 0, 43, 0, 44, 0, 42, 2)
+nodes/fragment/connections = PackedInt32Array(6, 0, 7, 2, 9, 0, 7, 0, 10, 0, 9, 0, 11, 0, 9, 2, 14, 0, 13, 2, 15, 0, 13, 0, 17, 0, 15, 0, 16, 0, 15, 2, 7, 0, 20, 0, 13, 0, 20, 1, 23, 0, 0, 1, 24, 0, 0, 3, 25, 0, 9, 1, 26, 0, 15, 1, 2, 0, 27, 0, 28, 0, 27, 2, 29, 0, 30, 0, 33, 0, 35, 0, 30, 0, 37, 0, 37, 0, 38, 2, 35, 0, 38, 0, 30, 0, 38, 1, 39, 0, 33, 0, 34, 0, 41, 0, 30, 0, 41, 2, 41, 0, 39, 0, 38, 0, 42, 0, 27, 0, 42, 1, 22, 0, 43, 1, 43, 0, 27, 1, 43, 0, 0, 5, 20, 0, 43, 0, 44, 0, 42, 2, 42, 0, 0, 0)

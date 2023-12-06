@@ -6,10 +6,10 @@ extends Node3D
 var AUTO_RUN = true
 
 @export
-var DEFAULT_MAP_SIZE = Vector3(10, 5, 10)
+var DEFAULT_MAP_SIZE = Vector3(30, 6, 30)
 
 @export
-var DEFAULT_MAP_CHUNK_SIZE = Vector3(10, 5, 10)
+var DEFAULT_MAP_CHUNK_SIZE = Vector3(12, 10, 12)
 
 @export
 var DEFAULT_MAP_CHUNK_OVERLAP = 2
@@ -19,7 +19,11 @@ func _ready():
 	if not AUTO_RUN:
 		return
 
-	map_builder.initialize_map(DEFAULT_MAP_SIZE, DEFAULT_MAP_CHUNK_SIZE, DEFAULT_MAP_CHUNK_OVERLAP)
+	var map_params = WFCModels.MapParams.new()
+	map_params.size = DEFAULT_MAP_SIZE
+	map_params.chunk_size = DEFAULT_MAP_CHUNK_SIZE
+	map_params.chunk_overlap = DEFAULT_MAP_CHUNK_OVERLAP
+	map_builder.initialize_map(map_params)
 
 	var start_timer = Timer.new()
 	start_timer.autostart = false

@@ -13,6 +13,8 @@ var is_expanding = false
 var _possibilities: Array = []
 var _collapsed_to: String
 
+var mesh
+
 
 func _process(delta):
 	if is_constraining:
@@ -53,6 +55,7 @@ func collapse(proto_name: String = String()):
 	mesh_instance.rotation = mesh_rotation
 	add_child(mesh_instance)
 	mesh_instance.owner = self
+	mesh = mesh_instance
 
 
 func constrain(new_possibilities: Array):
@@ -69,6 +72,9 @@ func constrain(new_possibilities: Array):
 func expand(new_possibilities: Array):
 	if is_collapsed and len(new_possibilities) > 1:
 		is_collapsed = false
+		if mesh:
+			mesh.queue_free()
+			mesh = null
 
 	_possibilities = new_possibilities
 	play_expand_animation()

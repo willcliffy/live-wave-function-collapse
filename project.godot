@@ -17,7 +17,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-WFC="*res://src/wfc.gd"
+WFC="*res://src/WFC/wfc.gd"
+WFCModels="*res://src/WFC/models.gd"
 
 [display]
 

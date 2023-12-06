@@ -34,23 +34,22 @@ var slot_matrix = []
 var last_position = Vector2(0, 0)
 var initializing = false
 
-var map_size: Vector3
-var map_chunk_size: Vector3
-var map_chunk_overlap: int
+var map_params: WFCModels.MapParams
 
 
 func _process(_delta):
 	if not initializing:
 		return
 
-	if last_position.y == map_size.y:
+	if last_position.y == map_params.size.y:
 		initializing = false
 		print(Time.get_datetime_string_from_system(), " done creating visual slots")
 		WFC.slot_constrained.connect(play_constrain_animation, CONNECT_DEFERRED)
-		WFC.initialize(map_size, map_chunk_size, map_chunk_overlap)
+		WFC.slot_reset.connect(play_expand_animation, CONNECT_DEFERRED)
+		WFC.initialize(map_params)
 		return
 
-	for z in range(map_size.z):
+	for z in range(map_params.size.z):
 		var slot = slot_scene.instantiate()
 		slot.name = "Slot " + str(last_position.x) + " " + str(last_position.y) + " " + str(z)
 		slot.position = Vector3(last_position.x, last_position.y, z)
@@ -60,22 +59,20 @@ func _process(_delta):
 		slot.play_expand_animation()
 
 	last_position.x += 1
-	if last_position.x == map_size.x:
+	if last_position.x == map_params.size.x:
 		last_position.x = 0
 		last_position.y += 1
 
 
-func initialize_map(input_map_size: Vector3, input_map_chunk_size: Vector3, input_map_chunk_overlap: int):
-	map_size = input_map_size
-	map_chunk_size = input_map_chunk_size
-	map_chunk_overlap = input_map_chunk_overlap
+func initialize_map(params: WFCModels.MapParams):
+	map_params = params
 
-	$CameraBase.position += Vector3(map_size.x / 2, 0, map_size.z / 2)
-	for y in range(map_size.y):
+	$CameraBase.position += Vector3(map_params.size.x / 2, 0, map_params.size.z / 2)
+	for y in range(map_params.size.y):
 		slot_matrix.append([])
-		for x in range(map_size.x):
+		for x in range(map_params.size.x):
 			slot_matrix[y].append([])
-			for z in range(map_size.z):
+			for z in range(map_params.size.z):
 				slot_matrix[y][x].append(null)
 	initializing = true
 
@@ -85,3 +82,8 @@ func play_constrain_animation(slot_position: Vector3, protos: Array):
 	if slot:
 		slot.constrain(protos)
 
+
+func play_expand_animation(slot_position: Vector3, protos: Array):
+	var slot = slot_matrix[slot_position.y][slot_position.x][slot_position.z]
+	if slot:
+		slot.expand(protos)
