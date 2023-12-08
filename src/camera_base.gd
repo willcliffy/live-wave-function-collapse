@@ -15,6 +15,8 @@ func _physics_process(delta):
 	if Input.is_anything_pressed():
 		handle_camera_rotation_input(delta)
 		handle_camera_movement_input(delta)
+		if Input.get_action_strength("aerial_camera_toggle") > 0:
+			rotation_degrees = Vector3(-90, 0, 0)
 
 
 func handle_camera_zoom_input(event):

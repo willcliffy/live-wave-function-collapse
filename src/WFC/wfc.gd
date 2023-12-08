@@ -1,10 +1,12 @@
 extends Node
 
+signal map_initialized
+signal map_completed
+
+signal slot_created(slot: Vector3)
 signal slot_constrained(slot: Vector3, protos: Array)
 signal slot_reset(slot: Vector3, protos: Array)
 
-signal map_initialized
-signal map_collapsed
 
 const PROTO_FILE_NAME = "prototype_data.json"
 
@@ -17,6 +19,8 @@ var _collapser: Collapser.WfcCollapser
 var _autocollapse := false
 var _autocollapse_started: float
 
+var slots_constrained := []
+var slots_expanded := []
 
 func _ready():
 	_load_proto_data()
@@ -27,10 +31,28 @@ func _ready():
 
 
 func _process(_delta):
-	if _autocollapse and _collapser.idle:
+	# If any expanded, process all constrained and then process all resets before continuing
+	if len(slots_expanded) > 0:
+		for i in range(10):
+			if len(slots_constrained) > 0:
+				var slot = slots_constrained.pop_front() 
+				slot_constrained.emit(slot[0], slot[1])
+			elif len(slots_expanded) > 0:
+				var slot = slots_expanded.pop_front() 
+				slot_reset.emit(slot[0], slot[1])
+		return
+
+	# if collapser is idle, and our stack isn't enormous, collapse next
+	if _autocollapse and _collapser.idle and len(slots_constrained) < 100:
 		var action := Collapser.Action.new()
 		action.type = Collapser.ActionType.COLLAPSE
 		_collapser.queue_action(action)
+
+	# process some constrained slots
+	for i in range(10):
+		if len(slots_constrained) > 0:
+			var slot = slots_constrained.pop_front() 
+			slot_constrained.emit(slot[0], slot[1])
 
 
 func _load_proto_data():
@@ -74,12 +96,14 @@ func _map_initialized():
 	map_initialized.emit()
 
 
-func _slot_constrained(slot: Vector3, protos: Array):
-	slot_constrained.emit(slot, protos)
+func _slot_created(slot_position: Vector3):
+	slot_created.emit(slot_position)
 
+func _slot_constrained(slot_position: Vector3, protos: Array):
+	slots_constrained.append([slot_position, protos])
 
-func _slot_reset(slot: Vector3, protos: Array):
-	slot_reset.emit(slot, protos)
+func _slot_reset(slot_position: Vector3, protos: Array):
+	slots_expanded.append([slot_position, protos])
 
 
 func start_collapse():
@@ -87,10 +111,9 @@ func start_collapse():
 	_autocollapse_started = Time.get_unix_time_from_system()
 	print(Time.get_datetime_string_from_system(), " autocollapse starting")
 
-
 func stop_collapse():
 	_autocollapse = false
 	var elapsed = Time.get_unix_time_from_system() - _autocollapse_started
 	print(Time.get_datetime_string_from_system(), " autocollapse stopped. Elapsed: ", elapsed)
-	map_collapsed.emit()
+	map_completed.emit()
 

@@ -1,36 +1,13 @@
 extends Node3D
 
-@onready var meshes = preload("res://wfc_modules.glb").instantiate()
-
-const CONSTRAIN_ANIMATION_DURATION = 0.5
-
-var is_collapsed = false
-
-var constrain_time_left = CONSTRAIN_ANIMATION_DURATION
-var is_constraining = false
-var is_expanding = false
-
 var _possibilities: Array = []
 var _collapsed_to: String
 
 var mesh
 
 
-func _process(delta):
-	if is_constraining:
-		constrain_time_left -= delta
-		var transparancy = 0.5 * constrain_time_left / CONSTRAIN_ANIMATION_DURATION
-		$ConstrainHighlight.mesh.material.albedo_color = Color(1, 0, 0, transparancy)
-		if constrain_time_left < 0:
-			is_constraining = false
-			$ConstrainHighlight.visible = false
-	elif is_expanding:
-		constrain_time_left -= delta
-		var transparancy = 0.5 * constrain_time_left / CONSTRAIN_ANIMATION_DURATION
-		$ExpandHighlight.mesh.material.albedo_color = Color(0, 1, 0, transparancy)
-		if constrain_time_left < 0:
-			is_expanding = false
-			$ExpandHighlight.visible = false
+func _ready():
+	$Highlight.material_override = Preload.SlotMaterial.duplicate()
 
 
 func collapse(proto_name: String = String()):
@@ -41,7 +18,6 @@ func collapse(proto_name: String = String()):
 		proto_name = _possibilities[randi() % len(_possibilities)]
 
 	_collapsed_to = proto_name
-	is_collapsed = true
 
 	play_constrain_animation()
 
@@ -50,7 +26,7 @@ func collapse(proto_name: String = String()):
 
 	var proto_datum = WFC._proto_data[proto_name]
 	var mesh_rotation = Vector3(0, proto_datum["mesh_rotation"] * PI/2, 0)
-	var mesh_instance = meshes.get_node(proto_datum["mesh_name"]).duplicate()
+	var mesh_instance = Preload.ProtoMeshes.get_node(proto_datum["mesh_name"]).duplicate()
 	mesh_instance.name = "Mesh"
 	mesh_instance.rotation = mesh_rotation
 	add_child(mesh_instance)
@@ -70,29 +46,22 @@ func constrain(new_possibilities: Array):
 
 
 func expand(new_possibilities: Array):
-	if is_collapsed and len(new_possibilities) > 1:
-		is_collapsed = false
-		if mesh:
-			mesh.queue_free()
-			mesh = null
+	if mesh and len(new_possibilities) > 1:
+		mesh.queue_free()
+		mesh = null
 
 	_possibilities = new_possibilities
 	play_expand_animation()
 
 
 func overconstrained():
-	$InvalidHighlight.visible = true
-
+	$Highlight.material_override.set("shader_parameter/start_time",  0.0)
+	$Highlight.material_override.set("shader_parameter/initial_color", Vector4(1, 0, 1, 0.5))
 
 func play_constrain_animation():
-	constrain_time_left = CONSTRAIN_ANIMATION_DURATION
-	is_constraining = true
-	$ConstrainHighlight.mesh.material.albedo_color = Color(1, 0, 0, 0.5)
-	$ConstrainHighlight.visible = true
-
+	$Highlight.material_override.set("shader_parameter/start_time",  float(Time.get_ticks_msec()) / 1000.0)
+	$Highlight.material_override.set("shader_parameter/initial_color", Vector4(1, 0, 0, 0.5))
 
 func play_expand_animation():
-	constrain_time_left = CONSTRAIN_ANIMATION_DURATION
-	is_expanding = true
-	$ExpandHighlight.mesh.material.albedo_color = Color(0, 1, 0, 0.5)
-	$ExpandHighlight.visible = true
+	$Highlight.material_override.set("shader_parameter/start_time",  float(Time.get_ticks_msec()) / 1000.0)
+	$Highlight.material_override.set("shader_parameter/initial_color", Vector4(0, 1, 0, 0.5))

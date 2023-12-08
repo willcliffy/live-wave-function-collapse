@@ -6,16 +6,17 @@ extends Node3D
 var AUTO_RUN = true
 
 @export
-var DEFAULT_MAP_SIZE = Vector3(30, 6, 30)
+var DEFAULT_MAP_SIZE = Vector3(20, 10, 20)
 
 @export
-var DEFAULT_MAP_CHUNK_SIZE = Vector3(12, 10, 12)
+var DEFAULT_MAP_CHUNK_SIZE = Vector3(12, 8, 12)
 
 @export
 var DEFAULT_MAP_CHUNK_OVERLAP = 2
  
 
 func _ready():
+	print("%s Starting" % [Time.get_datetime_string_from_system()])
 	if not AUTO_RUN:
 		return
 
@@ -37,7 +38,7 @@ func _ready():
 	collapse_timer.one_shot = true
 	collapse_timer.timeout.connect(_finalize_map)
 	add_child(collapse_timer)
-	WFC.map_collapsed.connect(collapse_timer.start)
+	WFC.map_completed.connect(collapse_timer.start)
 
 
 func _get_all_children(in_node, arr := []):
@@ -60,6 +61,7 @@ func _finalize_map():
 	for slot in slot_array:
 		if slot._collapsed_to.is_empty() or slot._collapsed_to == "p-1":
 			continue
+
 		var proto_datum = WFC._proto_data[slot._collapsed_to]
 		var mesh_rotation = Vector3(0, proto_datum["mesh_rotation"] * PI/2, 0)
 		var mesh_instance: MeshInstance3D = modules.get_node(proto_datum["mesh_name"]).duplicate()

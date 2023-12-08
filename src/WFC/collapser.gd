@@ -57,28 +57,9 @@ class WfcCollapser:
 
 			var action = _queued_actions.pop_back()
 			if action.type == ActionType.INITIALIZE:
-				_generate_slots()
-				_generate_chunks()
-				all_chunks_array[current_chunk_index]._apply_custom_constraints()
-				WFC._map_initialized.call_deferred()
+				_collapser_initialize()
 			elif action.type == ActionType.COLLAPSE:
-				#print("skipping collapse cause shit broke")
-				#_stop = true
-				for i in range(AUTOCOLLAPSE_SPEED):
-					var current_chunk = all_chunks_array[current_chunk_index]
-					var done = current_chunk._collapse_next()
-					if done:
-						current_chunk_index += 1
-						if current_chunk_index >= len(all_chunks_array):
-							print("done")
-							WFC.stop_collapse.call_deferred()
-						else:
-							var next_chunk = all_chunks_array[current_chunk_index]
-							for j in range(current_chunk_index):
-								next_chunk.reset_overlapping(all_chunks_array[j])
-								next_chunk.propagate_from(all_chunks_array[j])
-							next_chunk._apply_custom_constraints()
-						break
+				_collapser_collapse_next()
 			else:
 				print("Invalid action queued, skipping: ", action.type)
 
@@ -86,22 +67,24 @@ class WfcCollapser:
 		_stop = true
 		_runner.post()
 
-	func _generate_slots():
+	func _collapser_initialize():
+		# Generate slots:
 		for y in range(params.size.y):
 			all_slots_matrix.append([])
 			for x in range(params.size.x):
 				all_slots_matrix[y].append([])
 				for z in range(params.size.z):
-					var slot = WFCChunk.Slot.new()
+					var slot = WFCSlot.Slot.new()
 					slot.position = Vector3(x, y, z)
 					slot.expand(WFC._proto_data.keys())
 					all_slots_array.append(slot)
 					all_slots_matrix[y][x].append(slot)
+					WFC._slot_created.call_deferred()
 
-	func _generate_chunks():
-		var num_x = floor(params.size.x / (params.chunk_size.x - params.chunk_overlap)) + 1
-		var num_y = floor(params.size.y / (params.chunk_size.y - params.chunk_overlap)) + 1
-		var num_z = floor(params.size.z / (params.chunk_size.z - params.chunk_overlap)) + 1
+		# Generate chunks
+		var num_x := ceili(params.size.x / (params.chunk_size.x - params.chunk_overlap))
+		var num_y := ceili(params.size.y / (params.chunk_size.y - params.chunk_overlap))
+		var num_z := ceili(params.size.z / (params.chunk_size.z - params.chunk_overlap))
 		var position_factor := params.chunk_size - Vector3.ONE * params.chunk_overlap
 
 		for x_chunk in range(num_x):
@@ -111,3 +94,31 @@ class WfcCollapser:
 					var new_chunk := WFCChunk.MapChunk.new()
 					new_chunk.initialize(params, position, all_slots_matrix, all_slots_array)
 					all_chunks_array.append(new_chunk)
+
+		# Initialize the first chunk
+		print("%s Next Chunk: %d" % [Time.get_datetime_string_from_system(), current_chunk_index])
+		all_chunks_array[current_chunk_index]._apply_custom_constraints()
+		WFC._map_initialized.call_deferred()
+
+	func _collapser_collapse_next():
+		for i in range(AUTOCOLLAPSE_SPEED):
+			var current_chunk = all_chunks_array[current_chunk_index]
+			var done = current_chunk._collapse_next()
+			if not done:
+				continue
+
+			current_chunk_index += 1
+			if current_chunk_index >= len(all_chunks_array):
+				WFC.stop_collapse.call_deferred()
+				break
+
+			print("%s Next Chunk: %d" % [Time.get_datetime_string_from_system(), current_chunk_index])
+
+			var next_chunk = all_chunks_array[current_chunk_index]
+			for j in range(current_chunk_index):
+				next_chunk.reset_overlapping(all_chunks_array[j])
+
+			next_chunk._apply_custom_constraints()
+
+			for j in range(current_chunk_index):
+				next_chunk.propagate_from(all_chunks_array[j])

@@ -1,7 +1,6 @@
 @tool
 extends EditorPlugin
 
-const Scatter := preload("./src/scatter.gd")
 
 func _get_plugin_name():
 	return "CliffScatter"
@@ -11,7 +10,7 @@ func _enter_tree():
 	add_custom_type(
 		"CliffScatter",
 		"Node3D",
-		preload("./src/scatter.gd"),
+		preload("./src/scatter_generator.gd"),
 		preload("./icons/scatter.svg")
 	)
 

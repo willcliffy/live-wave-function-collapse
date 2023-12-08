@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://bm8070r1bydcn"]
+
+[ext_resource type="Shader" path="res://resources/slot_highlight.gdshader" id="1_25uyy"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_25uyy")
+shader_parameter/initial_color = Vector4(1, 0, 0, 1)
+shader_parameter/duration = 0.25
+shader_parameter/start_time = 0.0

@@ -3,106 +3,65 @@ extends Node
 class_name WFCChunk
 
 
-class Slot:
-	var position: Vector3
-	var possibilities: Array
-
-	func expand(protos: Array):
-		possibilities = protos
-
-	func constrain(protos: Array):
-		possibilities = protos
-
-	func collapse(proto: String = ""):
-		if not proto.is_empty():
-			possibilities = [proto]
-		else:
-			possibilities = [_choose_from_bucket()]
-
-	func constrain_uncapped(direction: Vector3):
-		var new_possibilities = []
-		for proto in possibilities:
-			if "p-1" in WFC._valid_neighbors[proto][direction]:
-				new_possibilities.append(proto)
-				new_possibilities.append(proto)
-
-		if len(new_possibilities) != len(possibilities):
-			possibilities = new_possibilities
-
-	func remove_all(to_remove: Array):
-		var new_possibilities = []
-		for proto in possibilities:
-			if not proto in to_remove:
-				new_possibilities.append(proto)
-		if len(new_possibilities) != len(possibilities):
-			possibilities = new_possibilities
-
-	func entropy() -> int:
-		return len(possibilities)
-
-	func is_collapsed() -> bool:
-		return len(possibilities) <= 1
-
-	func _choose_from_bucket():
-		var sum_of_weights := 0
-		for proto in possibilities:
-			sum_of_weights += WFC._proto_data[proto]["weight"]
-
-		var selected_weight := randi_range(0, sum_of_weights)
-		for proto in possibilities:
-			selected_weight -= WFC._proto_data[proto]["weight"]
-			if selected_weight <= 0:
-				return proto
-
-		return possibilities.back()
-
-
 class MapChunk:
 	var map_params: WFCModels.MapParams
 	var position: Vector3
 
-	var _slots_array: Array = []
-	var _slots_matrix: Array = []
+	var _all_slots_array: Array = []
+	var _all_slots_matrix: Array = []
+
+	var _chunk_slots_set: Dictionary = {}
+	var _chunk_slots_matrix: Array = []
 
 	func initialize(params: WFCModels.MapParams, chunk_position: Vector3, slots_matrix: Array, slots_array: Array):
 		map_params = params
 		position = chunk_position
-		_slots_array = slots_array
-		_slots_matrix = slots_matrix
+		_all_slots_array = slots_array
+		_all_slots_matrix = slots_matrix
+
+		for y in range(params.size.y):
+			_chunk_slots_matrix.append([])
+			for x in range(params.size.x):
+				_chunk_slots_matrix[y].append([])
+				for z in range(params.size.z):
+					_chunk_slots_matrix[y][x].append(null)
+
+		var start := position
+		var end := position + map_params.chunk_size
+		end.x = min(end.x, map_params.size.x)
+		end.y = min(end.y, map_params.size.y)
+		end.z = min(end.z, map_params.size.z)
+
+		for y in range(start.y, end.y):
+			for x in range(start.x, end.x):
+				for z in range(start.z, end.z):
+					var slot: WFCSlot.Slot = _all_slots_matrix[y][x][z]
+					_chunk_slots_set[slot] = true
+					_chunk_slots_matrix[y][x][z] = slot
 
 	func within_chunk(point: Vector3) -> bool:
 		return \
-			(point.x >= position.x and point.x < position.x + map_params.chunk_size.x and point.x < map_params.size.x) and \
 			(point.y >= position.y and point.y < position.y + map_params.chunk_size.y and point.y < map_params.size.y) and \
+			(point.x >= position.x and point.x < position.x + map_params.chunk_size.x and point.x < map_params.size.x) and \
 			(point.z >= position.z and point.z < position.z + map_params.chunk_size.z and point.z < map_params.size.z)
 
-	func get_slots_within_chunk() -> Array:
-		# TODO - OPTIMIZE
-		var result := []
-		for slot in _slots_array:
-			if within_chunk(slot.position):
-				result.append(slot)
-		return result
-
 	func get_overlapping(other: MapChunk) -> Array:
-		# TODO - OPTIMIZE
 		var result := []
-		var others := other.get_slots_within_chunk()
-		for slot in get_slots_within_chunk():
+		var others := other._chunk_slots_set
+		for slot in _chunk_slots_set.keys():
 			if slot in others:
 				result.append(slot)
 		return result
 
 	func reset_overlapping(other: MapChunk):
-		# TODO - OPTIMIZE
 		for slot in get_overlapping(other):
 			slot.expand(WFC._proto_data.keys())
-			WFC._slot_reset.call_deferred(slot.position, slot.possibilities)
+			WFC._slot_reset.call_deferred(slot.position, WFC._proto_data.keys())
 
 	func propagate_from(other: MapChunk):
-		# TODO - OPTIMIZE
-		for slot in other.get_slots_within_chunk():
-			_propagate(slot)
+		for slot in other._chunk_slots_set.keys():
+			if not _get_neighbors(slot.position).is_empty():
+				_propagate(slot)
 
 	func _apply_custom_constraints():
 		# TODO - OPTIMIZE?
@@ -112,40 +71,30 @@ class MapChunk:
 			if WFC._proto_data[proto]["constrain_to"] == "BOT":
 				constrained_to_bottom.append(proto)
 
+		var chunk_top_y = min(position.y + map_params.chunk_size.y, map_params.size.y) - 1
+
 		# no "uncapped" prototypes along the sides of the space
-		var propagation_queue := []
-		for y in range(map_params.size.y):
-			for x in range(map_params.size.x):
-				for z in range(map_params.size.z):
-					var slot = _slots_matrix[y][x][z]
-					if not slot:
-						continue
+		var queue := []
+		for slot in _chunk_slots_set.keys():
+			if slot.position.y == 0:
+				if slot.constrain_uncapped(Vector3.MODEL_BOTTOM):
+					queue.append(slot)
+			elif slot.remove_all(constrained_to_bottom):
+				queue.append(slot)
 
-					if y == 0:
-						slot.constrain_uncapped(Vector3.MODEL_BOTTOM)
-						propagation_queue.append(slot)
-					else:
-						slot.remove_all(constrained_to_bottom)
-						propagation_queue.append(slot)
+			if slot.position.y == chunk_top_y and slot.constrain_uncapped(Vector3.MODEL_TOP):
+				queue.append(slot)
+			if slot.position.x == 0 and slot.constrain_uncapped(Vector3.MODEL_RIGHT):
+				queue.append(slot)
+			if slot.position.x == map_params.size.x - 1 and slot.constrain_uncapped(Vector3.MODEL_LEFT):
+				queue.append(slot)
+			if slot.position.z == 0 and slot.constrain_uncapped(Vector3.MODEL_REAR):
+				queue.append(slot)
+			if slot.position.z == map_params.size.z - 1 and slot.constrain_uncapped(Vector3.MODEL_FRONT):
+				queue.append(slot)
 
-					if y == map_params.size.y - 1:
-						slot.constrain_uncapped(Vector3.MODEL_TOP)
-						propagation_queue.append(slot)
-					if x == 0:
-						slot.constrain_uncapped(Vector3.MODEL_RIGHT)
-						propagation_queue.append(slot)
-					if x == map_params.size.x - 1:
-						slot.constrain_uncapped(Vector3.MODEL_LEFT)
-						propagation_queue.append(slot)
-					if z == 0:
-						slot.constrain_uncapped(Vector3.MODEL_REAR)
-						propagation_queue.append(slot)
-					if z == map_params.size.z - 1:
-						slot.constrain_uncapped(Vector3.MODEL_FRONT)
-						propagation_queue.append(slot)
-
-		for propagation in propagation_queue:
-			_propagate(propagation)
+		for slot in queue:
+			_propagate(slot)
 
 	func _collapse_next() -> bool:
 		var selected = _select_lowest_entropy()
@@ -156,19 +105,34 @@ class MapChunk:
 		WFC._slot_constrained.call_deferred(selected.position, selected.possibilities)
 		_propagate(selected)
 		return false
+	
+	func _apply_custom_entropy(entropy: int, slot_position: Vector3) -> int:
+		if slot_position.y == 0:
+			entropy += 2
+		else:
+			entropy += floor(slot_position.y)
 
-	func _select_lowest_entropy() -> Slot:
+		if slot_position.x == 0:
+			entropy += 1
+		if slot_position.x == map_params.size.x - 1:
+			entropy += 1
+		if slot_position.z == 0:
+			entropy += 1
+		if slot_position.z == map_params.size.z - 1:
+			entropy += 1
+
+		return entropy
+
+	func _select_lowest_entropy() -> WFCSlot.Slot:
 		var lowest_entropy_value = 99999
 		var lowest_entropy_slots
 
-		for slot in get_slots_within_chunk():
+		for slot in _chunk_slots_set.keys():
 			var entropy = slot.entropy()
 			if entropy <= 1 or entropy > lowest_entropy_value:
 				continue
 
-			entropy += slot.position.y
-			if slot.position.y == map_params.size.y:
-				entropy += 2
+			entropy = _apply_custom_entropy(entropy, slot.position)
 			if entropy < lowest_entropy_value:
 				lowest_entropy_value = entropy
 				lowest_entropy_slots = [slot]
@@ -191,16 +155,17 @@ class MapChunk:
 		]
 
 		var valid_neighbors = []
-		for neighbor in all_neighbors:
-			if not within_chunk(neighbor):
+		for neighbor_position in all_neighbors:
+			if not within_chunk(neighbor_position):
 				continue
-			var slot = _slots_matrix[neighbor.y][neighbor.x][neighbor.z]
-			if slot:
+
+			var slot = _chunk_slots_matrix[neighbor_position.y][neighbor_position.x][neighbor_position.z]
+			if slot: 
 				valid_neighbors.append(slot)
 
 		return valid_neighbors
 
-	func _propagate(slot: Slot):
+	func _propagate(slot: WFCSlot.Slot):
 		var incomplete = _propagate_recursive(slot)
 		while len(incomplete) > 0:
 			var current = incomplete.pop_front()
@@ -209,10 +174,13 @@ class MapChunk:
 				print("Warning! Maxed call stack at least twice! Adding ", len(inner_incomplete), " additional propagations to queue of length ", len(incomplete))
 				incomplete.append_array(inner_incomplete)
 
-	func _propagate_recursive(slot: Slot, depth: int = 0):
+	func _propagate_recursive(slot: WFCSlot.Slot, depth: int = 0):
 		var incomplete = [] # Slots that should be propagated, but we can't without hitting recursion limit
+
 		for neighbor in _get_neighbors(slot.position):
-			if neighbor.is_collapsed(): continue
+			if neighbor.is_collapsed():
+				continue
+
 			var new_neighbor_possibilities = []
 			for neighbor_proto in neighbor.possibilities:
 				for proto in slot.possibilities:
