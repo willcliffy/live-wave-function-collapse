@@ -31,17 +31,13 @@ var CLIFF_DETECTION_SKIRT = 0.3
 var map_params: WFCModels.MapParams
 var slot_matrix: Array = []
 
-var initializing := false
+
 var last_position := Vector3.ZERO
 
 
 func _ready():
 	WFC.slot_constrained.connect(play_constrain_animation, CONNECT_DEFERRED)
 	WFC.slot_reset.connect(play_expand_animation, CONNECT_DEFERRED)
-
-func _process(_delta):
-	if not initializing:
-		return
 
 
 func initialize_map(params: WFCModels.MapParams):
@@ -56,9 +52,14 @@ func initialize_map(params: WFCModels.MapParams):
 		for x in range(map_params.size.x):
 			slot_matrix[y].append([])
 			for z in range(map_params.size.z):
-				slot_matrix[y][x].append(null)
+				var slot = slot_scene.instantiate()
+				slot.name = "Slot %d %d %d" % [x, y, z]
+				slot.position = Vector3(x, y, z)
+				add_child(slot)
+				slot.owner = self
+				slot.expand(WFC._proto_data.keys())
+				slot_matrix[y][x].append(slot)
 
-	initializing = true
 	WFC.initialize(params)
 
 
@@ -67,13 +68,7 @@ func play_constrain_animation(slot_position: Vector3, protos: Array):
 	if slot:
 		slot.constrain(protos)
 	else:
-		slot = slot_scene.instantiate()
-		slot.name = "Slot " + str(slot_position.x) + " " + str(slot_position.y) + " " + str(slot_position.z)
-		slot.position = Vector3(slot_position.x, slot_position.y, slot_position.z)
-		add_child(slot)
-		slot.owner = self
-		slot_matrix[slot_position.y][slot_position.x][slot_position.z] = slot
-		slot.constrain(protos)
+		print("tried to constrain null slot! ", slot_position)
 
 
 func play_expand_animation(slot_position: Vector3, protos: Array):
@@ -81,4 +76,4 @@ func play_expand_animation(slot_position: Vector3, protos: Array):
 	if slot:
 		slot.expand(protos)
 	else:
-		print("tried expanding null slot at ", slot_position)
+		print("tried to expand null slot! ", slot_position)

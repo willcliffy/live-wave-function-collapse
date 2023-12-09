@@ -6,13 +6,13 @@ extends Node3D
 var AUTO_RUN = true
 
 @export
-var DEFAULT_MAP_SIZE = Vector3(20, 10, 20)
+var DEFAULT_MAP_SIZE = Vector3(40, 10, 40)
 
 @export
-var DEFAULT_MAP_CHUNK_SIZE = Vector3(12, 8, 12)
+var DEFAULT_MAP_CHUNK_SIZE = Vector3(8, 5, 8)
 
 @export
-var DEFAULT_MAP_CHUNK_OVERLAP = 2
+var DEFAULT_MAP_CHUNK_OVERLAP = 1
  
 
 func _ready():

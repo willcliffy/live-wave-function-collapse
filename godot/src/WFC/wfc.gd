@@ -19,8 +19,14 @@ var _collapser: Collapser.WfcCollapser
 var _autocollapse := false
 var _autocollapse_started: float
 
-var slots_constrained := []
-var slots_expanded := []
+var slot_changes_queued := []
+
+
+enum SlotChangeType {
+	COLLAPSE = 1,
+	RESET = 2,
+}
+
 
 func _ready():
 	_load_proto_data()
@@ -31,28 +37,22 @@ func _ready():
 
 
 func _process(_delta):
-	# If any expanded, process all constrained and then process all resets before continuing
-	if len(slots_expanded) > 0:
+	# If any expanded, process all constrained and then process all resets before  continuing
+	if len(slot_changes_queued) > 0:
 		for i in range(10):
-			if len(slots_constrained) > 0:
-				var slot = slots_constrained.pop_front() 
-				slot_constrained.emit(slot[0], slot[1])
-			elif len(slots_expanded) > 0:
-				var slot = slots_expanded.pop_front() 
-				slot_reset.emit(slot[0], slot[1])
+			if len(slot_changes_queued) > 0:
+				var slot = slot_changes_queued.pop_front()
+				if slot[0] == SlotChangeType.COLLAPSE:
+					slot_constrained.emit(slot[1], slot[2])
+				elif slot[0] == SlotChangeType.RESET:
+					slot_reset.emit(slot[1], slot[2])
 		return
 
 	# if collapser is idle, and our stack isn't enormous, collapse next
-	if _autocollapse and _collapser.idle and len(slots_constrained) < 100:
+	if _autocollapse and _collapser.idle:
 		var action := Collapser.Action.new()
 		action.type = Collapser.ActionType.COLLAPSE
 		_collapser.queue_action(action)
-
-	# process some constrained slots
-	for i in range(10):
-		if len(slots_constrained) > 0:
-			var slot = slots_constrained.pop_front() 
-			slot_constrained.emit(slot[0], slot[1])
 
 
 func _load_proto_data():
@@ -100,10 +100,10 @@ func _slot_created(slot_position: Vector3):
 	slot_created.emit(slot_position)
 
 func _slot_constrained(slot_position: Vector3, protos: Array):
-	slots_constrained.append([slot_position, protos])
+	slot_changes_queued.append([SlotChangeType.COLLAPSE, slot_position, protos])
 
 func _slot_reset(slot_position: Vector3, protos: Array):
-	slots_expanded.append([slot_position, protos])
+	slot_changes_queued.append([SlotChangeType.RESET, slot_position, protos])
 
 
 func start_collapse():

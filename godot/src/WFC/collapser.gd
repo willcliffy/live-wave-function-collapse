@@ -87,8 +87,8 @@ class WfcCollapser:
 		var num_z := ceili(params.size.z / (params.chunk_size.z - params.chunk_overlap))
 		var position_factor := params.chunk_size - Vector3.ONE * params.chunk_overlap
 
-		for x_chunk in range(num_x):
-			for y_chunk in range(num_y):
+		for y_chunk in range(num_y):
+			for x_chunk in range(num_x):
 				for z_chunk in range(num_z):
 					var position := position_factor * Vector3(x_chunk, y_chunk, z_chunk)
 					var new_chunk := WFCChunk.MapChunk.new()
