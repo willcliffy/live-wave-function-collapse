@@ -1,8 +1,8 @@
 use godot::prelude::*;
 
 mod collapser;
-mod driver;
 mod models;
+// mod worker; // TODO - remove
 
 struct LiveWFC;
 

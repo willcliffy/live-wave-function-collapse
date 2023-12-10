@@ -1,55 +1,129 @@
-// use std::thread::{self, JoinHandle};
-
-use std::collections::VecDeque;
-use std::sync::mpsc::{self, Sender};
-use std::thread;
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::thread::{self, JoinHandle};
 
 use godot::prelude::*;
 
-use crate::models::{self, LWFCCollapserActionType};
-
-// const AUTOCOLLAPSE_SPEED: i32 = 5;
+use crate::models::{CollapserAction, CollapserActionType::*, CollapserState::*, CollapserUpdate};
 
 #[derive(GodotClass)]
+#[class(base=Node3D)]
 pub struct LWFCCollapser {
+    // Thread I/O
+    handle: Option<JoinHandle<()>>,
+    send_to_thread: Option<Sender<CollapserAction>>,
+    receive_in_main: Option<Receiver<CollapserUpdate>>,
+
+    #[var]
     pub idle: bool,
-    pub queued_actions: VecDeque<models::LWFCCollapserAction>,
-    pub sender: Option<Sender<models::LWFCCollapserAction>>,
+    #[var]
+    pub collapsing: bool,
+
+    #[base]
+    node: Base<Node3D>,
+}
+
+#[godot_api]
+impl INode3D for LWFCCollapser {
+    fn init(node: Base<Node3D>) -> Self {
+        LWFCCollapser {
+            idle: true,
+            collapsing: false,
+            handle: None,
+            send_to_thread: None,
+            receive_in_main: None,
+            node,
+        }
+    }
+}
+
+fn collapser_run(receiver: &mut Receiver<CollapserAction>, sender: &mut Sender<CollapserUpdate>) {
+    godot_print!("Beginning thread");
+    let mut state = NEW;
+    loop {
+        match state {
+            INITIALIZING => {
+                state = INITIALIZED;
+                continue;
+            }
+            PROCESSING => {
+                sender.send(CollapserUpdate::new(state)).unwrap();
+                continue;
+            }
+            _default => (),
+        }
+
+        let action = receiver.try_recv().unwrap();
+        match action.action_type {
+            NOOP => continue,
+            INIT => match state {
+                NEW => state = INITIALIZED, // TODO
+                INITIALIZING => godot_print!("LWFCCollapser INIT - Already initializing!"),
+                _default => godot_print!("LWFCCollapser INIT - Already initialized!"),
+            },
+            START => match state {
+                NEW => godot_print!("LWFCCollapser START - Not initialized!"),
+                INITIALIZING => godot_print!("LWFCCollapser START - Still initializing!"),
+                PROCESSING => godot_print!("LWFCCollapser START - Already running!"),
+                _default => state = PROCESSING,
+            },
+            STOP => break,
+        }
+    }
 }
 
 #[godot_api]
 impl LWFCCollapser {
-    fn initialize(mut self) {
-        let (tx, rx) = mpsc::channel::<models::LWFCCollapserAction>();
-        let initialize_action = models::LWFCCollapserAction {
-            action_type: LWFCCollapserActionType::INITIALIZE,
-            payload: None,
-        };
+    #[signal]
+    fn map_initialized();
 
-        println!("{}", tx.send(initialize_action).unwrap_err());
+    #[signal]
+    fn map_completed();
 
-        thread::spawn(move || loop {
-            self.idle = true;
-            let received = rx.recv();
-            self.idle = false;
-            let msg = match received {
-                Ok(action) => action,
-                Err(err) => {
-                    println!("Rcv err: {}", err);
-                    continue;
-                }
-            };
+    #[signal]
+    fn slot_created(slot: Vector3);
 
-            match msg.action_type {
-                LWFCCollapserActionType::NOOP => continue,
-                LWFCCollapserActionType::INITIALIZE => {}
-                LWFCCollapserActionType::START => {}
-                LWFCCollapserActionType::STOP => {}
-            }
-        });
+    #[signal]
+    fn slot_constrained(slot: Vector3, protos: Array<GString>);
+
+    #[signal]
+    fn slot_reset(slot: Vector3, protos: Array<GString>);
+
+    #[func]
+    pub fn initialize(&mut self) {
+        let (send_to_thread, mut recv_in_thread) = channel::<CollapserAction>();
+        let (mut send_to_main, recv_in_main) = channel::<CollapserUpdate>();
+        let handle = thread::spawn(move || collapser_run(&mut recv_in_thread, &mut send_to_main));
+
+        send_to_thread.send(CollapserAction::new(INIT)).unwrap();
+
+        self.send_to_thread = Some(send_to_thread);
+        self.receive_in_main = Some(recv_in_main);
+        self.handle = Some(handle);
+        godot_print!("initialized!")
     }
 
-    fn start(self) {}
+    #[func]
+    pub fn start(&mut self) {
+        self.collapsing = true;
+        let sender = self.send_to_thread.as_ref().unwrap();
+        sender.send(CollapserAction::new(START)).unwrap();
+    }
 
-    fn stop(self) {}
+    #[func]
+    pub fn tick(&mut self, _delta: f32) {
+        let rcvr = self.receive_in_main.as_ref().unwrap();
+        match rcvr.try_recv() {
+            Ok(state_update) => match state_update.state {
+                _default => godot_print!("{:?}", state_update),
+            },
+            Err(_) => (),
+        }
+    }
+
+    #[func]
+    pub fn stop(&mut self) {
+        self.collapsing = true;
+        let sender = self.send_to_thread.as_ref().unwrap();
+        sender.send(CollapserAction::new(STOP)).unwrap();
+    }
 }
