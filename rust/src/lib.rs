@@ -1,7 +1,10 @@
 use godot::prelude::*;
 
+mod chunk;
 mod collapser;
+mod driver;
 mod models;
+mod slot;
 // mod worker; // TODO - remove
 
 struct LiveWFC;

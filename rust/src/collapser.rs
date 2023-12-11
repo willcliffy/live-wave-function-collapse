@@ -1,129 +1,165 @@
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::thread::{self, JoinHandle};
+use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 
 use godot::prelude::*;
 
-use crate::models::{CollapserAction, CollapserActionType::*, CollapserState::*, CollapserUpdate};
+use crate::{
+    chunk::Chunk,
+    models::{
+        collapser_action::{CollapserAction, CollapserActionType},
+        collapser_state::CollapserState,
+        driver_update::{DriverUpdate, SlotChange},
+    },
+};
 
-#[derive(GodotClass)]
-#[class(base=Node3D)]
 pub struct LWFCCollapser {
-    // Thread I/O
-    handle: Option<JoinHandle<()>>,
-    send_to_thread: Option<Sender<CollapserAction>>,
-    receive_in_main: Option<Receiver<CollapserUpdate>>,
+    sender: Sender<DriverUpdate>,
+    receiver: Receiver<CollapserAction>,
 
-    #[var]
-    pub idle: bool,
-    #[var]
-    pub collapsing: bool,
-
-    #[base]
-    node: Base<Node3D>,
+    state: CollapserState,
+    chunks: Vec<Chunk>,
+    current_chunk: usize,
 }
 
-#[godot_api]
-impl INode3D for LWFCCollapser {
-    fn init(node: Base<Node3D>) -> Self {
-        LWFCCollapser {
-            idle: true,
-            collapsing: false,
-            handle: None,
-            send_to_thread: None,
-            receive_in_main: None,
-            node,
-        }
-    }
-}
-
-fn collapser_run(receiver: &mut Receiver<CollapserAction>, sender: &mut Sender<CollapserUpdate>) {
-    godot_print!("Beginning thread");
-    let mut state = NEW;
-    loop {
-        match state {
-            INITIALIZING => {
-                state = INITIALIZED;
-                continue;
-            }
-            PROCESSING => {
-                sender.send(CollapserUpdate::new(state)).unwrap();
-                continue;
-            }
-            _default => (),
-        }
-
-        let action = receiver.try_recv().unwrap();
-        match action.action_type {
-            NOOP => continue,
-            INIT => match state {
-                NEW => state = INITIALIZED, // TODO
-                INITIALIZING => godot_print!("LWFCCollapser INIT - Already initializing!"),
-                _default => godot_print!("LWFCCollapser INIT - Already initialized!"),
-            },
-            START => match state {
-                NEW => godot_print!("LWFCCollapser START - Not initialized!"),
-                INITIALIZING => godot_print!("LWFCCollapser START - Still initializing!"),
-                PROCESSING => godot_print!("LWFCCollapser START - Already running!"),
-                _default => state = PROCESSING,
-            },
-            STOP => break,
-        }
-    }
-}
-
-#[godot_api]
 impl LWFCCollapser {
-    #[signal]
-    fn map_initialized();
-
-    #[signal]
-    fn map_completed();
-
-    #[signal]
-    fn slot_created(slot: Vector3);
-
-    #[signal]
-    fn slot_constrained(slot: Vector3, protos: Array<GString>);
-
-    #[signal]
-    fn slot_reset(slot: Vector3, protos: Array<GString>);
-
-    #[func]
-    pub fn initialize(&mut self) {
-        let (send_to_thread, mut recv_in_thread) = channel::<CollapserAction>();
-        let (mut send_to_main, recv_in_main) = channel::<CollapserUpdate>();
-        let handle = thread::spawn(move || collapser_run(&mut recv_in_thread, &mut send_to_main));
-
-        send_to_thread.send(CollapserAction::new(INIT)).unwrap();
-
-        self.send_to_thread = Some(send_to_thread);
-        self.receive_in_main = Some(recv_in_main);
-        self.handle = Some(handle);
-        godot_print!("initialized!")
-    }
-
-    #[func]
-    pub fn start(&mut self) {
-        self.collapsing = true;
-        let sender = self.send_to_thread.as_ref().unwrap();
-        sender.send(CollapserAction::new(START)).unwrap();
-    }
-
-    #[func]
-    pub fn tick(&mut self, _delta: f32) {
-        let rcvr = self.receive_in_main.as_ref().unwrap();
-        match rcvr.try_recv() {
-            Ok(state_update) => match state_update.state {
-                _default => godot_print!("{:?}", state_update),
-            },
-            Err(_) => (),
+    pub fn new(
+        sender: Sender<DriverUpdate>,
+        receiver: Receiver<CollapserAction>,
+        _map_size: Vector3,
+        _chunk_size: Vector3,
+        _chunk_overlap: i32,
+    ) -> Self {
+        godot_print!("initialized");
+        Self {
+            sender,
+            receiver,
+            state: CollapserState::IDLE,
+            chunks: vec![],
+            current_chunk: 0,
         }
     }
 
-    #[func]
-    pub fn stop(&mut self) {
-        self.collapsing = true;
-        let sender = self.send_to_thread.as_ref().unwrap();
-        sender.send(CollapserAction::new(STOP)).unwrap();
+    pub fn run(&mut self) {
+        loop {
+            if self.state == CollapserState::STOPPED {
+                break;
+            }
+
+            if self.state == CollapserState::IDLE {
+                self.wait_for_message();
+            }
+
+            if self.state == CollapserState::PROCESSING {
+                self.check_for_message();
+            }
+        }
+    }
+
+    fn wait_for_message(&mut self) {
+        match self.receiver.recv() {
+            Ok(action) => self.on_message_received(action),
+            Err(e) => {
+                godot_error!("Disconnected in thread (IDLE). Exiting. {}", e);
+                self.stop();
+            }
+        }
+    }
+
+    fn check_for_message(&mut self) {
+        match self.receiver.try_recv() {
+            Ok(action) => self.on_message_received(action),
+            Err(e) => match e {
+                TryRecvError::Empty => self.collapse_next(),
+                TryRecvError::Disconnected => {
+                    godot_error!("Disconnected in thread (PROCESSING). Exiting.");
+                    self.stop();
+                }
+            },
+        }
+    }
+
+    fn on_message_received(&mut self, action: CollapserAction) {
+        godot_print!("Message received in thread: {:?}", action);
+        match action.action_type {
+            CollapserActionType::NOOP => godot_print!("noop!"),
+            CollapserActionType::START => self.start(),
+            CollapserActionType::PAUSE => self.idle(),
+            CollapserActionType::STOP => self.stop(),
+        }
+    }
+
+    fn collapse_next(&mut self) {
+        let chunk = &mut self.chunks[self.current_chunk];
+        let changed = chunk.collapse_next();
+        match changed {
+            Some(changes) => self.post_changes(changes),
+            None => self.prepare_next_chunk(),
+        }
+    }
+
+    fn prepare_next_chunk(&mut self) {
+        self.current_chunk += 1;
+        if self.current_chunk > self.chunks.len() {
+            return self.idle();
+        }
+
+        let next_chunk = self.chunks.get(self.current_chunk);
+        let mut overlapping: Vec<Vector3> = Vec::new();
+        let mut neighboring: Vec<Vector3> = Vec::new();
+        match next_chunk {
+            None => {
+                return godot_error!(
+                    "Tried to get chunk that didn't exist! {} out of {} chunks",
+                    self.current_chunk,
+                    self.chunks.len()
+                )
+            }
+            Some(next) => {
+                for i in 0..self.current_chunk {
+                    if let Some(other) = self.chunks.get(i) {
+                        for slot in next.get_overlapping(other) {
+                            overlapping.push(slot);
+                        }
+
+                        for slot in next.get_neighboring(other) {
+                            neighboring.push(slot);
+                        }
+                    }
+                }
+            }
+        }
+
+        let next_chunk = self.chunks.get_mut(self.current_chunk);
+        if let Some(next) = next_chunk {
+            next.reset_slots(overlapping);
+            next.propagate_from(neighboring);
+            next.apply_custom_constraints();
+        }
+    }
+
+    fn idle(&mut self) {
+        self.state = CollapserState::IDLE;
+        self.sender
+            .send(DriverUpdate::new_state(self.state))
+            .unwrap();
+    }
+
+    fn start(&mut self) {
+        self.state = CollapserState::PROCESSING;
+        self.sender
+            .send(DriverUpdate::new_state(self.state))
+            .unwrap();
+    }
+
+    fn stop(&mut self) {
+        self.state = CollapserState::STOPPED;
+        self.sender
+            .send(DriverUpdate::new_state(self.state))
+            .unwrap();
+    }
+
+    fn post_changes(&mut self, changes: Vec<SlotChange>) {
+        self.sender
+            .send(DriverUpdate::new_changes(changes))
+            .unwrap();
     }
 }
