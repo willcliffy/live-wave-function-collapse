@@ -1,4 +1,4 @@
-use godot::{builtin::math::ApproxEq, prelude::*};
+use godot::prelude::*;
 use rand::prelude::*;
 
 use crate::models::{driver_update::SlotChange, prototype::Prototype};
@@ -9,21 +9,34 @@ pub struct Slot {
 }
 
 impl Slot {
-    pub fn _expand(&mut self, prototypes: Vec<Prototype>) -> Option<SlotChange> {
-        self.possibilities = prototypes;
-        None // TODO
+    pub fn new(position: Vector3) -> Self {
+        Self {
+            position,
+            possibilities: vec![],
+        }
     }
 
-    pub fn _constrain(&mut self, prototypes: Vec<Prototype>) -> Option<SlotChange> {
+    pub fn changed(&mut self, prototypes: Vec<Prototype>) -> Option<SlotChange> {
         self.possibilities = prototypes;
+
+        unreachable!();
         None // TODO
     }
 
     pub fn _constrain_uncapped(&mut self, _direction: Vector3) -> Option<SlotChange> {
         // TODO - we don't use direction!
+        let old_length = self.possibilities.len();
         self.possibilities
             .retain(|p| p.valid_neighbors[0].contains(&String::from("p-1")));
-        None // TODO
+
+        if self.possibilities.len() != old_length {
+            return Some(SlotChange {
+                position: self.position,
+                new_protos: self.possibilities.clone(), // TODO - can we avoid cloning here?
+            });
+        }
+
+        None
     }
 
     pub fn collapse(&mut self, prototype: Option<Prototype>) -> Option<SlotChange> {
@@ -32,6 +45,8 @@ impl Slot {
         } else {
             self.possibilities = vec![self.choose_weighted()];
         }
+
+        unreachable!();
         None // TODO
     }
 
@@ -41,6 +56,8 @@ impl Slot {
                 self.possibilities.remove(i);
             }
         }
+
+        unreachable!();
         None // TODO
     }
 
@@ -50,10 +67,6 @@ impl Slot {
 
     pub fn _is_collapsed(self) -> bool {
         self.possibilities.len() <= 1
-    }
-
-    pub fn _is_adjacent_to(self, other: Slot) -> bool {
-        self.position.distance_to(other.position).approx_eq(&1.0)
     }
 
     fn choose_weighted(&mut self) -> Prototype {

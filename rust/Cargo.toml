@@ -9,3 +9,6 @@ crate-type = ["cdylib"]
 [dependencies]
 godot = { git = "https://github.com/godot-rust/gdext", branch = "master" }
 rand = { version = "0.8.5", features = ["small_rng"] }
+
+[profile.dev]
+opt-level = 3

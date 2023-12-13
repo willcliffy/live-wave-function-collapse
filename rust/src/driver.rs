@@ -16,10 +16,10 @@ pub struct LWFCDriver {
     recv_in_main: Option<Receiver<DriverUpdate>>,
 
     #[export]
-    pub map_size: Vector3,
+    pub map_size: Vector3i,
 
     #[export]
-    pub chunk_size: Vector3,
+    pub chunk_size: Vector3i,
 
     #[export]
     pub chunk_overlap: i32,
@@ -36,16 +36,12 @@ impl INode3D for LWFCDriver {
             send_to_thread: None,
             recv_in_main: None,
             node,
-            map_size: Vector3 {
-                x: 30.0,
-                y: 10.0,
-                z: 30.0,
+            map_size: Vector3i {
+                x: 30,
+                y: 10,
+                z: 30,
             },
-            chunk_size: Vector3 {
-                x: 12.0,
-                y: 6.0,
-                z: 12.0,
-            },
+            chunk_size: Vector3i { x: 12, y: 6, z: 12 },
             chunk_overlap: 2,
         }
     }
@@ -106,11 +102,12 @@ impl LWFCDriver {
     #[func]
     pub fn tick(&mut self, _delta: f64) {
         if let Some(update) = self.receive_update() {
-            if let Some(_) = update.new_state {
-                godot_print!("Ignoring state update from thread: {:?}", update);
+            if let Some(new_state) = update.new_state {
+                godot_print!("Ignoring state update from thread: {:?}", new_state);
             }
 
             if let Some(changes) = update.changes {
+                godot_print!("Slots changed!");
                 let changes_array = Array::from_iter(changes.iter().map(|c| c.to_godot()));
                 self.node
                     .emit_signal("slots_changed".into(), &[changes_array.to_variant()]);

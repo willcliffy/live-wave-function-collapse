@@ -27,7 +27,7 @@ albedo_color = Color(0.196078, 0.196078, 0.196078, 0.392157)
 [sub_resource type="BoxMesh" id="BoxMesh_dwly7"]
 material = SubResource("StandardMaterial3D_2cr7v")
 
-[node name="MapBuilder" type="LWFCCollapser"]
+[node name="MapBuilder" type="Node3D"]
 process_mode = 1
 script = ExtResource("1_lqyqi")
 
@@ -56,5 +56,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
 visible = false
 mesh = SubResource("BoxMesh_dwly7")
 
-[connection signal="slot_constrained" from="." to="." method="_on_slot_constrained"]
-[connection signal="slot_created" from="." to="." method="_on_slot_created"]
+[node name="LWFCDriver" type="LWFCDriver" parent="."]
+visible = false

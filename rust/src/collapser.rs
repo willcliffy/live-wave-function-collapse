@@ -3,42 +3,41 @@ use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use godot::prelude::*;
 
 use crate::{
-    chunk::Chunk,
+    map::Map,
     models::{
         collapser_action::{CollapserAction, CollapserActionType},
         collapser_state::CollapserState,
-        driver_update::{DriverUpdate, SlotChange},
+        driver_update::DriverUpdate,
     },
 };
 
 pub struct LWFCCollapser {
+    state: CollapserState,
+
     sender: Sender<DriverUpdate>,
     receiver: Receiver<CollapserAction>,
 
-    state: CollapserState,
-    chunks: Vec<Chunk>,
-    current_chunk: usize,
+    map: Map,
 }
 
 impl LWFCCollapser {
     pub fn new(
         sender: Sender<DriverUpdate>,
         receiver: Receiver<CollapserAction>,
-        _map_size: Vector3,
-        _chunk_size: Vector3,
-        _chunk_overlap: i32,
+        map_size: Vector3i,
+        chunk_size: Vector3i,
+        chunk_overlap: i32,
     ) -> Self {
-        godot_print!("initialized");
         Self {
+            state: CollapserState::IDLE,
             sender,
             receiver,
-            state: CollapserState::IDLE,
-            chunks: vec![],
-            current_chunk: 0,
+            map: Map::new(map_size, chunk_size, chunk_overlap),
         }
     }
 
     pub fn run(&mut self) {
+        godot_print!("Starting run in thread.");
         loop {
             if self.state == CollapserState::STOPPED {
                 break;
@@ -55,6 +54,7 @@ impl LWFCCollapser {
     }
 
     fn wait_for_message(&mut self) {
+        godot_print!("Waiting for message in thread");
         match self.receiver.recv() {
             Ok(action) => self.on_message_received(action),
             Err(e) => {
@@ -68,12 +68,30 @@ impl LWFCCollapser {
         match self.receiver.try_recv() {
             Ok(action) => self.on_message_received(action),
             Err(e) => match e {
-                TryRecvError::Empty => self.collapse_next(),
+                TryRecvError::Empty => {
+                    self.collapse_next();
+                }
                 TryRecvError::Disconnected => {
                     godot_error!("Disconnected in thread (PROCESSING). Exiting.");
-                    self.stop();
+                    self.stop()
                 }
             },
+        }
+    }
+
+    fn collapse_next(&mut self) {
+        let update = self.map.collapse_next();
+        if let Some(update) = update {
+            if let Some(state) = update.new_state {
+                // TODO - apply the state update here if we have one.
+                // the collapser should have responsibility to stop itself
+                // plus the driver doesnt currently do anything with status updates.
+                if state == CollapserState::STOPPED {
+                    return self.stop();
+                }
+            }
+
+            self.post_changes(update)
         }
     }
 
@@ -87,79 +105,22 @@ impl LWFCCollapser {
         }
     }
 
-    fn collapse_next(&mut self) {
-        let chunk = &mut self.chunks[self.current_chunk];
-        let changed = chunk.collapse_next();
-        match changed {
-            Some(changes) => self.post_changes(changes),
-            None => self.prepare_next_chunk(),
-        }
-    }
-
-    fn prepare_next_chunk(&mut self) {
-        self.current_chunk += 1;
-        if self.current_chunk > self.chunks.len() {
-            return self.idle();
-        }
-
-        let next_chunk = self.chunks.get(self.current_chunk);
-        let mut overlapping: Vec<Vector3> = Vec::new();
-        let mut neighboring: Vec<Vector3> = Vec::new();
-        match next_chunk {
-            None => {
-                return godot_error!(
-                    "Tried to get chunk that didn't exist! {} out of {} chunks",
-                    self.current_chunk,
-                    self.chunks.len()
-                )
-            }
-            Some(next) => {
-                for i in 0..self.current_chunk {
-                    if let Some(other) = self.chunks.get(i) {
-                        for slot in next.get_overlapping(other) {
-                            overlapping.push(slot);
-                        }
-
-                        for slot in next.get_neighboring(other) {
-                            neighboring.push(slot);
-                        }
-                    }
-                }
-            }
-        }
-
-        let next_chunk = self.chunks.get_mut(self.current_chunk);
-        if let Some(next) = next_chunk {
-            next.reset_slots(overlapping);
-            next.propagate_from(neighboring);
-            next.apply_custom_constraints();
-        }
-    }
-
     fn idle(&mut self) {
         self.state = CollapserState::IDLE;
-        self.sender
-            .send(DriverUpdate::new_state(self.state))
-            .unwrap();
+        self.post_changes(DriverUpdate::new_state(self.state));
     }
 
     fn start(&mut self) {
         self.state = CollapserState::PROCESSING;
-        self.sender
-            .send(DriverUpdate::new_state(self.state))
-            .unwrap();
+        self.post_changes(DriverUpdate::new_state(self.state));
     }
 
     fn stop(&mut self) {
         self.state = CollapserState::STOPPED;
-        self.sender
-            .send(DriverUpdate::new_state(self.state))
-            .unwrap();
+        self.post_changes(DriverUpdate::new_state(self.state));
     }
 
-    fn post_changes(&mut self, changes: Vec<SlotChange>) {
-        self.sender
-            .send(DriverUpdate::new_changes(changes))
-            .unwrap();
+    fn post_changes(&mut self, update: DriverUpdate) {
+        self.sender.send(update).unwrap();
     }
 }

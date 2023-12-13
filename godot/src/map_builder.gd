@@ -1,63 +1,30 @@
-extends LWFCCollapser
+extends Node3D
 
-signal map_finalized(path: String)
-
+@onready var driver = $LWFCDriver
 @onready var slot_scene = preload("res://scenes/Slot.tscn")
-@onready var map_final_scene = preload("res://scenes/MapFinal.tscn")
-@onready var grass = $Grass
 
-#@export_range(0, 16.0)
-#var TILE_RESOLUTION = 10.0
-
-#@export_range(0, 2.0 * PI)
-#var MAX_ANGLE_NORMAL = 3.0 * PI / 4.0
-
-#@export_range(0, 2.0 * PI)
-#var MAX_ROTATION = 2.0 * PI
-
-#@export_range(0, PI)
-#var MAX_TILT = PI / 7.0
-
-#@export_range(0, 1.0)
-#var MAX_SCALE_DELTA = 0.1
-
-#@export_range(0, 1.0)
-#var SCALE = 0.25
-
-#@export_range(0, 1)
-#var CLIFF_DETECTION_SKIRT = 0.3
-
-var map_params: MapParams
 var slot_matrix: Array = []
 
-var last_position := Vector3.ZERO
 
-
-func _process(delta):
-	tick(delta)
-
-
-func initialize_map(params: MapParams):
-	map_params = params
-	$Area.mesh.size = params.size
-	$Area.position = floor(params.size / 2) - Vector3.ONE * 0.5
+func _ready():
+	$Area.mesh.size = driver.map_size
+	$Area.position = floor(Vector3(driver.map_size) / 2) - Vector3.ONE * 0.5
 	$Area.visible = true
 
-	$CameraBase.position += Vector3(map_params.size.x / 2, 0, map_params.size.z / 2)
-	for y in range(map_params.size.y):
+	$CameraBase.position += Vector3(driver.map_size.x / 2, 0, driver.map_size.z / 2)
+	for y in range(driver.map_size.y):
 		slot_matrix.append([])
-		for x in range(map_params.size.x):
+		for x in range(driver.map_size.x):
 			slot_matrix[y].append([])
-			for z in range(map_params.size.z):
+			for z in range(driver.map_size.z):
 				var slot = slot_scene.instantiate()
 				slot.name = "Slot %d %d %d" % [x, y, z]
 				slot.position = Vector3(x, y, z)
 				add_child(slot)
 				slot.owner = self
-				#slot.expand(WFC._proto_data.keys())
 				slot_matrix[y][x].append(slot)
 
-	initialize()
+	driver.start()
 
 
 func play_expand_animation(slot_position: Vector3, protos: Array):
@@ -76,6 +43,5 @@ func _on_slot_constrained(slot_position, protos):
 		print("tried to constrain null slot! ", slot_position)
 
 
-func _on_slot_created(slot):
-	pass # Replace with function body.
-
+func _on_slots_changed(changes):
+	print("got slot change! ", changes)
