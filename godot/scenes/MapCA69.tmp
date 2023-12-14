@@ -38,11 +38,11 @@ environment = SubResource("Environment_fqcsp")
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
 
 [node name="CameraBase" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 2.08165e-12, 2.08165e-12, 2.08165e-12)
+transform = Transform3D(1, -5.48842e-16, 2.8571e-16, 2.85709e-16, 0.819152, 0.573576, -5.48843e-16, -0.573576, 0.819152, 2.08165e-12, 2.08165e-12, 2.08165e-12)
 script = ExtResource("3_j1p4m")
 
 [node name="Camera" type="Camera3D" parent="CameraBase"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 30)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 15)
 current = true
 
 [node name="Grass" type="MultiMeshInstance3D" parent="."]

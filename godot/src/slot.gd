@@ -31,7 +31,7 @@ func collapse(proto_name: String = String()):
 		remove_child(mesh)
 		mesh = null
 	
-	var proto_datum = {} # WFC._proto_data[proto_name]
+	var proto_datum = Preload.ProtoData[proto_name]
 	var mesh_rotation = Vector3(0, proto_datum["mesh_rotation"] * PI/2, 0)
 	var mesh_instance = Preload.ProtoMeshes.get_node(proto_datum["mesh_name"]).duplicate()
 	mesh_instance.name = "Mesh"

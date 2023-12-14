@@ -2,21 +2,21 @@ use godot::prelude::*;
 
 use super::{collapser_state::CollapserState, prototype::Prototype};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SlotChange {
-    pub position: Vector3,
+    pub position: Vector3i,
     pub new_protos: Vec<Prototype>,
 }
 
 #[derive(ToGodot, FromGodot, GodotConvert, Debug)]
 pub struct SlotChangeGodot {
-    pub position: Vector3,
+    pub position: Vector3i,
     pub new_protos: String,
 }
 
 // #[godot_api]
 impl SlotChangeGodot {
-    pub fn from_internal(position: Vector3, protos: Vec<Prototype>) -> Self {
+    pub fn from_internal(position: Vector3i, protos: Vec<Prototype>) -> Self {
         let mut new_protos: String = protos.iter().map(|p| p.id.clone() + ",".into()).collect();
         new_protos = new_protos.trim_end_matches(",").into();
         Self {

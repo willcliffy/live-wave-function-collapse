@@ -35,12 +35,17 @@ func play_expand_animation(slot_position: Vector3, protos: Array):
 		print("tried to expand null slot! ", slot_position)
 
 
-func _on_slot_constrained(slot_position, protos):
-	var slot = slot_matrix[slot_position.y][slot_position.x][slot_position.z]
-	if slot:
-		slot.constrain(protos)
-	else:
-		print("tried to constrain null slot! ", slot_position)
+func _on_slot_constrained(changes: Array):
+	# TODO
+	for raw_change in changes:
+		var change = raw_change["SlotChangeGodot"]
+		var change_position: Vector3i = change["position"]
+		var change_protos: String = change["new_protos"]
+		var slot = slot_matrix[change_position.y][change_position.x][change_position.z]
+		if slot:
+			slot.constrain(change_protos.split(","))
+	#else:
+		#print("tried to constrain null slot! ", slot_position)
 
 
 func _on_slots_changed(changes):

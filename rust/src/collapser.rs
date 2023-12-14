@@ -8,6 +8,7 @@ use crate::{
         collapser_action::{CollapserAction, CollapserActionType},
         collapser_state::CollapserState,
         driver_update::DriverUpdate,
+        prototype::Prototype,
     },
 };
 
@@ -27,12 +28,13 @@ impl LWFCCollapser {
         map_size: Vector3i,
         chunk_size: Vector3i,
         chunk_overlap: i32,
+        proto_data: Vec<Prototype>,
     ) -> Self {
         Self {
             state: CollapserState::IDLE,
             sender,
             receiver,
-            map: Map::new(map_size, chunk_size, chunk_overlap),
+            map: Map::new(map_size, chunk_size, chunk_overlap, proto_data),
         }
     }
 
@@ -91,6 +93,9 @@ impl LWFCCollapser {
                 }
             }
 
+            // TODO - this leads to uneven updates from the thread.
+            // Sometimes you'll post one change per tick and the main thread never catches up.
+            // Sometimes you'll post one large collapse and it will try to process the entire thing in one tick
             self.post_changes(update)
         }
     }

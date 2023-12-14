@@ -6,6 +6,7 @@ use godot::prelude::*;
 use crate::collapser::*;
 use crate::models::collapser_action::{CollapserAction, CollapserActionType};
 use crate::models::driver_update::DriverUpdate;
+use crate::models::prototype::Prototype;
 
 #[derive(GodotClass)]
 #[class(base=Node3D)]
@@ -57,6 +58,9 @@ impl INode3D for LWFCDriver {
         let chunk_size = self.chunk_size.clone();
         let chunk_overlap = self.chunk_overlap.clone();
 
+        let proto_data = Prototype::load();
+        godot_print!("Loaded {} prototypes", proto_data.len());
+
         let _handle = thread::spawn(move || {
             let mut collapser = LWFCCollapser::new(
                 send_to_main,
@@ -64,13 +68,16 @@ impl INode3D for LWFCDriver {
                 map_size,
                 chunk_size,
                 chunk_overlap,
+                proto_data,
             );
             collapser.run()
         });
     }
 
     fn process(&mut self, delta: f64) {
-        self.tick(delta)
+        for _ in 0..200 {
+            self.tick(delta)
+        }
     }
 
     fn exit_tree(&mut self) {
@@ -107,7 +114,7 @@ impl LWFCDriver {
             }
 
             if let Some(changes) = update.changes {
-                godot_print!("Slots changed!");
+                // godot_print!("Slots changed: {:?}", changes);
                 let changes_array = Array::from_iter(changes.iter().map(|c| c.to_godot()));
                 self.node
                     .emit_signal("slots_changed".into(), &[changes_array.to_variant()]);

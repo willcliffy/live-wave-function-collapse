@@ -1,6 +1,7 @@
 use godot::prelude::*;
+use rand::Rng;
 
-use crate::{map::Map, models::driver_update::SlotChange, slot::Slot};
+use crate::{map::Map, models::driver_update::SlotChange};
 
 #[derive(Clone, Copy)]
 pub struct Chunk {
@@ -38,7 +39,7 @@ impl Chunk {
         overlap
     }
 
-    pub fn get_neighbors(self, other: &Chunk, n: i32) -> Vec<Vector3i> {
+    pub fn get_neighbors(&self, other: &Chunk, n: i32) -> Vec<Vector3i> {
         let self_end = self.position + self.size;
         let other_end = other.position + other.size;
 
@@ -88,52 +89,106 @@ impl Chunk {
     }
 
     pub fn reset_slots(&self, _slots: Vec<Vector3i>, _map: &mut Map) {
-        unreachable!();
+        //unreachable!();
         godot_print!("reset_slots NOT YET IMPLEMENTED");
     }
 
     pub fn propagate_from(&self, _slots: Vec<Vector3i>, _map: &mut Map) {
-        unreachable!();
+        //unreachable!();
         godot_print!("propagate_from NOT YET IMPLEMENTED");
     }
 
+    pub fn apply_custom_constraints(&self) {
+        // unreachable!();
+        godot_print!("apply_custom_constraints NOT YET IMPLEMENTED");
+        return;
+    }
+
     pub fn collapse_next(&self, map: &mut Map) -> Option<Vec<SlotChange>> {
-        unreachable!();
-        godot_print!("collapse_next NOT YET IMPLEMENTED");
-        if let Some(mut slot) = self._select_lowest_entropy(map) {
-            let change = slot.collapse(None);
+        if let Some(slot_position) = self.select_lowest_entropy(map) {
+            let change = map.collapse_at(slot_position);
             return match change {
-                Some(change) => Some(self._propagate(change, map)),
-                None => None,
+                Some(change) => Some(self.propagate(&change, map)),
+                None => {
+                    godot_print!("failed to collapse at {}", slot_position);
+                    None
+                }
             };
         }
 
         None
     }
 
-    pub fn apply_custom_constraints(&self) {
-        unreachable!();
-        godot_print!("apply_custom_constraints NOT YET IMPLEMENTED");
-    }
+    fn select_lowest_entropy(&self, map: &mut Map) -> Option<Vector3i> {
+        let mut lowest_entropy = usize::MAX;
+        let mut lowest_entropy_slots = vec![];
+        for x in self.position.x..self.position.x + self.size.x {
+            for y in self.position.y..self.position.y + self.size.y {
+                for z in self.position.z..self.position.z + self.size.z {
+                    let position = Vector3i { x, y, z };
+                    let slot = map.get_slot(position);
+                    if let Some(slot) = slot {
+                        let entropy = slot.entropy();
+                        if entropy <= 1 || entropy > lowest_entropy {
+                            continue;
+                        }
 
-    fn _select_lowest_entropy(&self, _map: &mut Map) -> Option<Slot> {
+                        // TODO - apply custom entropy rules here
+                        // In the GDScript implementation, I added 1 along the bounding box of the
+                        // chunk, 2 at the top of the chunk, and added y to all cells' entropy
+                        if entropy < lowest_entropy {
+                            lowest_entropy = entropy;
+                            lowest_entropy_slots = vec![position];
+                        } else if entropy == lowest_entropy {
+                            lowest_entropy_slots.push(position);
+                        } else {
+                            // unreachable!()
+                        }
+                    }
+                }
+            }
+        }
+
+        if lowest_entropy_slots.len() >= 1 {
+            let selected_weight = rand::thread_rng().gen_range(0..lowest_entropy_slots.len());
+            return Some(lowest_entropy_slots[selected_weight]);
+        }
+
         None
     }
 
-    fn _get_neighbors(self, _map: &mut Map) -> Vec<Slot> {
+    fn get_slot_neighbors(self, _map: &mut Map) -> Vec<Vector3i> {
         vec![]
     }
 
-    fn _propagate(&self, slot: SlotChange, map: &mut Map) -> Vec<SlotChange> {
-        self._propagate_recursive(slot, map, 0)
+    fn propagate(&self, change: &SlotChange, map: &mut Map) -> Vec<SlotChange> {
+        self._propagate_recursive(change, map, 0)
     }
 
     fn _propagate_recursive(
         &self,
-        _slot: SlotChange,
-        _map: &mut Map,
+        change: &SlotChange,
+        map: &mut Map,
         _depth: i64,
     ) -> Vec<SlotChange> {
-        vec![]
+        let change_copy = change.clone();
+        let mut changes = vec![change_copy];
+
+        let neighbors = self.get_slot_neighbors(map);
+        for neighbor in neighbors.iter() {
+            let neighbor_slot_op = map.get_slot(*neighbor);
+            match neighbor_slot_op {
+                Some(neighbor_slot) => match neighbor_slot.changes_from(change) {
+                    Some(neighbor_change) => {
+                        map.constrain_at(&neighbor_change);
+                        changes.push(neighbor_change)
+                    }
+                    None => continue,
+                },
+                None => godot_print!("Tried to get neighbor that doesn't exist!"),
+            }
+        }
+
+        changes
     }
 }

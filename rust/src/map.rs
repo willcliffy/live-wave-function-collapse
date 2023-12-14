@@ -1,14 +1,11 @@
-use godot::{
-    builtin::{Vector3, Vector3i},
-    engine::utilities::ceili,
-    log::godot_print,
-};
+use godot::{builtin::Vector3i, engine::utilities::ceili, log::godot_print};
 
 use crate::{
     chunk::Chunk,
     models::{
         collapser_state::CollapserState,
         driver_update::{DriverUpdate, SlotChange},
+        prototype::Prototype,
     },
     slot::Slot,
 };
@@ -21,44 +18,17 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn new(size: Vector3i, chunk_size: Vector3i, chunk_overlap: i32) -> Self {
-        let mut slots = vec![];
-        for y in 0..size.y as i32 {
-            let mut plane = vec![];
-            for x in 0..size.x as i32 {
-                let mut row = vec![];
-                for z in 0..size.z as i32 {
-                    let slot = Slot::new(Vector3 {
-                        x: x as f32,
-                        y: y as f32,
-                        z: z as f32,
-                    });
-                    row.push(slot);
-                }
-                plane.push(row);
-            }
-            slots.push(plane);
-        }
+    pub fn new(
+        size: Vector3i,
+        chunk_size: Vector3i,
+        chunk_overlap: i32,
+        all_protos: Vec<Prototype>,
+    ) -> Self {
+        let slots = generate_slots(size, all_protos);
 
-        let num_x = ceili((size.x / (chunk_size.x - chunk_overlap)) as f64);
-        let num_y = ceili((size.y / (chunk_size.y - chunk_overlap)) as f64);
-        let num_z = ceili((size.z / (chunk_size.z - chunk_overlap)) as f64);
-        let position_factor = chunk_size - Vector3i::ONE * chunk_overlap;
-
-        let mut chunks = vec![];
-        for x_chunk in 0..num_x {
-            for y_chunk in 0..num_y {
-                for z_chunk in 0..num_z {
-                    let position = position_factor
-                        * Vector3i {
-                            x: x_chunk as i32,
-                            y: y_chunk as i32,
-                            z: z_chunk as i32,
-                        };
-                    let new_chunk = Chunk::new(position, chunk_size);
-                    chunks.push(new_chunk);
-                }
-            }
+        let chunks = generate_chunks(size, chunk_size, chunk_overlap);
+        if let Some(chunk) = chunks.get(0) {
+            chunk.apply_custom_constraints();
         }
 
         Self {
@@ -69,10 +39,13 @@ impl Map {
         }
     }
 
+    // called "down" from the collapser
+
     pub fn collapse_next(&mut self) -> Option<DriverUpdate> {
-        let chunk = self.chunks.get(self.current_chunk);
-        if let Some(chunk) = chunk {
-            let changed = chunk.clone().collapse_next(self);
+        let chunk_res = self.chunks.get(self.current_chunk);
+        if let Some(chunk) = chunk_res {
+            let chunk_clone = chunk.clone(); // TODO - I think this is fine since chunks are lightweight and immutable
+            let changed = chunk_clone.collapse_next(self);
             return match changed {
                 Some(changes) => Some(self.on_slots_changed(changes)),
                 None => self.prepare_next_chunk(),
@@ -82,11 +55,39 @@ impl Map {
         None
     }
 
+    // called "up" from chunks
+
+    pub fn get_slot(&mut self, slot_position: Vector3i) -> Option<&Slot> {
+        self.slots
+            .get(slot_position.y as usize)?
+            .get(slot_position.x as usize)?
+            .get(slot_position.z as usize)
+    }
+
+    pub fn collapse_at(&mut self, slot_position: Vector3i) -> Option<SlotChange> {
+        let slot = self.get_slot_mut(slot_position)?;
+        slot.collapse(None)
+    }
+
+    pub fn constrain_at(&mut self, change: &SlotChange) -> Option<SlotChange> {
+        let slot = self.get_slot_mut(change.position)?;
+        slot.change(change.new_protos.clone())
+    }
+
+    // private
+
+    fn get_slot_mut(&mut self, slot_position: Vector3i) -> Option<&mut Slot> {
+        self.slots
+            .get_mut(slot_position.y as usize)?
+            .get_mut(slot_position.x as usize)?
+            .get_mut(slot_position.z as usize)
+    }
+
     fn on_slots_changed(&mut self, changes: Vec<SlotChange>) -> DriverUpdate {
         for change in changes.iter() {
             let pos = change.position;
             let slot = &mut self.slots[pos.y as usize][pos.x as usize][pos.z as usize];
-            slot.changed(change.new_protos.clone());
+            slot.change(change.new_protos.clone());
         }
         DriverUpdate::new_changes(changes)
     }
@@ -120,4 +121,41 @@ impl Map {
 
         None
     }
+}
+
+fn generate_slots(size: Vector3i, all_protos: Vec<Prototype>) -> Vec<Vec<Vec<Slot>>> {
+    let mut slots = vec![];
+    for y in 0..size.y {
+        let mut plane = vec![];
+        for x in 0..size.x {
+            let mut row = vec![];
+            for z in 0..size.z {
+                let slot = Slot::new(Vector3i { x, y, z }, all_protos.clone());
+                row.push(slot);
+            }
+            plane.push(row);
+        }
+        slots.push(plane);
+    }
+    slots
+}
+
+fn generate_chunks(size: Vector3i, chunk_size: Vector3i, chunk_overlap: i32) -> Vec<Chunk> {
+    let num_x = ceili((size.x / (chunk_size.x - chunk_overlap)) as f64) as i32;
+    let num_y = ceili((size.y / (chunk_size.y - chunk_overlap)) as f64) as i32;
+    let num_z = ceili((size.z / (chunk_size.z - chunk_overlap)) as f64) as i32;
+    let position_factor = chunk_size - Vector3i::ONE * chunk_overlap;
+
+    let mut chunks = vec![];
+    for x in 0..num_x {
+        for y in 0..num_y {
+            for z in 0..num_z {
+                let position = position_factor * Vector3i { x, y, z };
+                let new_chunk = Chunk::new(position, chunk_size);
+                chunks.push(new_chunk);
+            }
+        }
+    }
+
+    chunks
 }
