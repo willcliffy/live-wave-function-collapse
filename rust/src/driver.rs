@@ -6,7 +6,6 @@ use godot::prelude::*;
 use crate::collapser::*;
 use crate::models::collapser_action::{CollapserAction, CollapserActionType};
 use crate::models::driver_update::DriverUpdate;
-use crate::models::prototype::Prototype;
 
 #[derive(GodotClass)]
 #[class(base=Node3D)]
@@ -38,11 +37,11 @@ impl INode3D for LWFCDriver {
             recv_in_main: None,
             node,
             map_size: Vector3i {
-                x: 30,
+                x: 20,
                 y: 10,
-                z: 30,
+                z: 20,
             },
-            chunk_size: Vector3i { x: 12, y: 6, z: 12 },
+            chunk_size: Vector3i { x: 6, y: 4, z: 6 },
             chunk_overlap: 2,
         }
     }
@@ -58,9 +57,6 @@ impl INode3D for LWFCDriver {
         let chunk_size = self.chunk_size.clone();
         let chunk_overlap = self.chunk_overlap.clone();
 
-        let proto_data = Prototype::load();
-        godot_print!("Loaded {} prototypes", proto_data.len());
-
         let _handle = thread::spawn(move || {
             let mut collapser = LWFCCollapser::new(
                 send_to_main,
@@ -68,14 +64,13 @@ impl INode3D for LWFCDriver {
                 map_size,
                 chunk_size,
                 chunk_overlap,
-                proto_data,
             );
             collapser.run()
         });
     }
 
     fn process(&mut self, delta: f64) {
-        for _ in 0..200 {
+        for _ in 0..1 {
             self.tick(delta)
         }
     }
@@ -114,7 +109,7 @@ impl LWFCDriver {
             }
 
             if let Some(changes) = update.changes {
-                // godot_print!("Slots changed: {:?}", changes);
+                // godot_print!("Slots changed: {:?}", changes.len());
                 let changes_array = Array::from_iter(changes.iter().map(|c| c.to_godot()));
                 self.node
                     .emit_signal("slots_changed".into(), &[changes_array.to_variant()]);

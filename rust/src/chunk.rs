@@ -1,7 +1,13 @@
+use std::cmp::min;
+
 use godot::prelude::*;
 use rand::Rng;
 
-use crate::{map::Map, models::driver_update::SlotChange};
+use crate::{
+    map::Map,
+    models::{driver_update::SlotChange, prototype::Prototype},
+    slot::Slot,
+};
 
 #[derive(Clone, Copy)]
 pub struct Chunk {
@@ -88,32 +94,36 @@ impl Chunk {
         neighbors
     }
 
-    pub fn reset_slots(&self, _slots: Vec<Vector3i>, _map: &mut Map) {
+    pub fn propagate_from(&self, slots: Vec<Vector3i>, map: &mut Map) -> Vec<SlotChange> {
         //unreachable!();
-        godot_print!("reset_slots NOT YET IMPLEMENTED");
-    }
+        let mut changes = vec![];
+        for slot in slots {
+            if let Some(slot) = map.get_slot(slot) {
+                changes.append(&mut self.propagate(
+                    &SlotChange {
+                        position: slot.position,
+                        new_protos: slot.possibilities.clone(),
+                    },
+                    map,
+                ))
+            }
+        }
 
-    pub fn propagate_from(&self, _slots: Vec<Vector3i>, _map: &mut Map) {
-        //unreachable!();
-        godot_print!("propagate_from NOT YET IMPLEMENTED");
-    }
-
-    pub fn apply_custom_constraints(&self) {
-        // unreachable!();
-        godot_print!("apply_custom_constraints NOT YET IMPLEMENTED");
-        return;
+        changes
     }
 
     pub fn collapse_next(&self, map: &mut Map) -> Option<Vec<SlotChange>> {
         if let Some(slot_position) = self.select_lowest_entropy(map) {
-            let change = map.collapse_at(slot_position);
-            return match change {
-                Some(change) => Some(self.propagate(&change, map)),
-                None => {
-                    godot_print!("failed to collapse at {}", slot_position);
-                    None
-                }
-            };
+            if let Some(slot) = map.get_slot_mut(slot_position) {
+                let change = slot.collapse(None);
+                return match change {
+                    Some(change) => Some(self.propagate(&change, map)),
+                    None => {
+                        godot_print!("failed to collapse at {}", slot_position);
+                        None
+                    }
+                };
+            }
         }
 
         None
@@ -128,7 +138,7 @@ impl Chunk {
                     let position = Vector3i { x, y, z };
                     let slot = map.get_slot(position);
                     if let Some(slot) = slot {
-                        let entropy = slot.entropy();
+                        let mut entropy = slot.entropy();
                         if entropy <= 1 || entropy > lowest_entropy {
                             continue;
                         }
@@ -136,6 +146,12 @@ impl Chunk {
                         // TODO - apply custom entropy rules here
                         // In the GDScript implementation, I added 1 along the bounding box of the
                         // chunk, 2 at the top of the chunk, and added y to all cells' entropy
+                        if y == 0 {
+                            entropy += 100;
+                        } else {
+                            entropy += y as usize;
+                        }
+
                         if entropy < lowest_entropy {
                             lowest_entropy = entropy;
                             lowest_entropy_slots = vec![position];
@@ -157,38 +173,163 @@ impl Chunk {
         None
     }
 
-    fn get_slot_neighbors(self, _map: &mut Map) -> Vec<Vector3i> {
-        vec![]
+    fn within(&self, position: Vector3i) -> bool {
+        let start = self.position;
+        let end = self.position + self.size;
+
+        position.x >= start.x
+            && position.x < end.x
+            && position.y >= start.y
+            && position.y < end.y
+            && position.z >= start.z
+            && position.z < end.z
+    }
+
+    fn get_slot_neighbors(self, change: &SlotChange, _map: &mut Map) -> Vec<Vector3i> {
+        let mut neighbors = vec![];
+        for direction in DIRECTIONS {
+            let neighbor_position = change.position + *direction;
+            if self.within(neighbor_position) {
+                neighbors.push(neighbor_position);
+            }
+        }
+
+        neighbors
+    }
+
+    // pub fn changes_from(&self, other: &SlotChange) -> Option<SlotChange> {
+    //     let mut new_protos = vec![];
+    //     let direction = other.position - self.position;
+
+    //     for proto in self.possibilities.iter() {
+    //         if proto.compatible_with_any(other.new_protos.clone(), direction) {
+    //             new_protos.push(proto.clone())
+    //         }
+    //     }
+
+    //     if new_protos.len() != self.possibilities.len() {
+    //         return Some(SlotChange {
+    //             position: self.position,
+    //             new_protos,
+    //         });
+    //     }
+
+    //     None
+    // }
+
+    pub fn apply_custom_constraints(&self, map: &mut Map) {
+        let map_size = map.size;
+        let chunk_top_y = min(self.position.y + self.size.y, map_size.y) - 1;
+
+        for x in self.position.x..self.position.x + self.size.x {
+            for y in self.position.y..self.position.y + self.size.y {
+                for z in self.position.z..self.position.z + self.size.z {
+                    let position = Vector3i { x, y, z };
+                    let slot = map.get_slot_mut(position);
+                    if let Some(slot) = slot {
+                        if position.y == 0 {
+                            Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::DOWN);
+                        } else {
+                            Prototype::retain_not_constrained(
+                                &mut slot.possibilities,
+                                "BOT".into(),
+                            );
+                        }
+
+                        if position.y == chunk_top_y {
+                            Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::UP);
+                        }
+
+                        if position.x == 0 {
+                            Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::LEFT);
+                        }
+
+                        if position.x == map_size.x - 1 {
+                            Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::RIGHT);
+                        }
+
+                        if position.z == 0 {
+                            Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::FORWARD);
+                        }
+
+                        if position.z == map_size.z - 1 {
+                            Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::BACK);
+                        }
+                    }
+                }
+            }
+        }
+
+        return;
+    }
+
+    fn calculate_changes(self, source: &SlotChange, target: &Slot) -> Option<SlotChange> {
+        let direction = source.position - target.position;
+        let mut new_protos = vec![];
+        for proto in target.possibilities.iter() {
+            if proto.compatible_with_any(&source.new_protos, direction) {
+                new_protos.push(proto.clone());
+            }
+        }
+
+        if new_protos.len() != target.possibilities.len() {
+            return Some(SlotChange {
+                position: target.position,
+                new_protos,
+            });
+        }
+
+        None
     }
 
     fn propagate(&self, change: &SlotChange, map: &mut Map) -> Vec<SlotChange> {
-        self._propagate_recursive(change, map, 0)
+        let mut changes: Vec<SlotChange> = vec![];
+        changes.push(change.clone());
+
+        // godot_print!("neighbors: {:?}", neighbors);
+        for neighbor in self.get_slot_neighbors(change, map).iter() {
+            if let Some(neighbor_slot) = map.get_slot_mut(*neighbor) {
+                if let Some(neighbor_change) = self.calculate_changes(change, neighbor_slot) {
+                    neighbor_slot.change(&neighbor_change.new_protos);
+                    changes.append(&mut self.propagate(&neighbor_change.clone(), map));
+                    changes.push(neighbor_change);
+                }
+            }
+        }
+
+        changes
     }
 
-    fn _propagate_recursive(
-        &self,
-        change: &SlotChange,
-        map: &mut Map,
-        _depth: i64,
-    ) -> Vec<SlotChange> {
-        let change_copy = change.clone();
-        let mut changes = vec![change_copy];
+    pub fn propagate_all(&self, map: &mut Map) -> Vec<SlotChange> {
+        let mut changes = vec![];
 
-        let neighbors = self.get_slot_neighbors(map);
-        for neighbor in neighbors.iter() {
-            let neighbor_slot_op = map.get_slot(*neighbor);
-            match neighbor_slot_op {
-                Some(neighbor_slot) => match neighbor_slot.changes_from(change) {
-                    Some(neighbor_change) => {
-                        map.constrain_at(&neighbor_change);
-                        changes.push(neighbor_change)
+        for x in self.position.x..self.position.x + self.size.x {
+            for y in self.position.y..self.position.y + self.size.y {
+                for z in self.position.z..self.position.z + self.size.z {
+                    let position = Vector3i { x, y, z };
+                    let slot = map.get_slot_mut(position);
+                    if let Some(slot) = slot {
+                        changes.append(&mut self.propagate(
+                            &SlotChange {
+                                position: position,
+                                new_protos: slot.possibilities.clone(),
+                            },
+                            map,
+                        ))
                     }
-                    None => continue,
-                },
-                None => godot_print!("Tried to get neighbor that doesn't exist!"),
+                }
             }
         }
 
         changes
     }
 }
+
+const DIRECTIONS: &'static [Vector3i] = &[
+    Vector3i::UP,
+    Vector3i::DOWN,
+    Vector3i::RIGHT,
+    Vector3i::LEFT,
+    Vector3i::FORWARD,
+    Vector3i::BACK,
+];

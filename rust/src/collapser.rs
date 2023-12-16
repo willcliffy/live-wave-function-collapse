@@ -8,7 +8,6 @@ use crate::{
         collapser_action::{CollapserAction, CollapserActionType},
         collapser_state::CollapserState,
         driver_update::DriverUpdate,
-        prototype::Prototype,
     },
 };
 
@@ -28,18 +27,23 @@ impl LWFCCollapser {
         map_size: Vector3i,
         chunk_size: Vector3i,
         chunk_overlap: i32,
-        proto_data: Vec<Prototype>,
     ) -> Self {
+        let state = CollapserState::IDLE;
+        let map = Map::new(map_size, chunk_size, chunk_overlap);
         Self {
-            state: CollapserState::IDLE,
+            state,
             sender,
             receiver,
-            map: Map::new(map_size, chunk_size, chunk_overlap, proto_data),
+            map,
         }
     }
 
     pub fn run(&mut self) {
         godot_print!("Starting run in thread.");
+        if let Some(update) = self.map.initialize() {
+            self.post_changes(update);
+        }
+
         loop {
             if self.state == CollapserState::STOPPED {
                 break;

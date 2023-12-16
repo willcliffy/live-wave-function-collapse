@@ -11,44 +11,49 @@ use crate::{
 };
 
 pub struct Map {
+    pub size: Vector3i,
     slots: Vec<Vec<Vec<Slot>>>,
     chunks: Vec<Chunk>,
     chunk_overlap: i32,
     current_chunk: usize,
+    proto_data: Vec<Prototype>,
 }
 
 impl Map {
-    pub fn new(
-        size: Vector3i,
-        chunk_size: Vector3i,
-        chunk_overlap: i32,
-        all_protos: Vec<Prototype>,
-    ) -> Self {
-        let slots = generate_slots(size, all_protos);
-
+    pub fn new(size: Vector3i, chunk_size: Vector3i, chunk_overlap: i32) -> Self {
+        let proto_data = Prototype::load();
+        godot_print!("Loaded {} prototypes", proto_data.len());
+        let slots = generate_slots(size, &proto_data);
         let chunks = generate_chunks(size, chunk_size, chunk_overlap);
-        if let Some(chunk) = chunks.get(0) {
-            chunk.apply_custom_constraints();
-        }
-
         Self {
+            size,
             slots,
             chunks,
             chunk_overlap,
             current_chunk: 0,
+            proto_data,
         }
     }
 
     // called "down" from the collapser
 
+    pub fn initialize(&mut self) -> Option<DriverUpdate> {
+        self.prepare_next_chunk()
+    }
+
     pub fn collapse_next(&mut self) -> Option<DriverUpdate> {
         let chunk_res = self.chunks.get(self.current_chunk);
         if let Some(chunk) = chunk_res {
-            let chunk_clone = chunk.clone(); // TODO - I think this is fine since chunks are lightweight and immutable
-            let changed = chunk_clone.collapse_next(self);
+            let changed = chunk.clone().collapse_next(self);
             return match changed {
-                Some(changes) => Some(self.on_slots_changed(changes)),
-                None => self.prepare_next_chunk(),
+                Some(changes) => {
+                    // godot_print!("chunk collapsed next and got {:?} changes", changes.len());
+                    Some(self.on_slots_changed(changes))
+                }
+                None => {
+                    self.current_chunk += 1;
+                    self.prepare_next_chunk()
+                }
             };
         }
 
@@ -64,36 +69,30 @@ impl Map {
             .get(slot_position.z as usize)
     }
 
-    pub fn collapse_at(&mut self, slot_position: Vector3i) -> Option<SlotChange> {
-        let slot = self.get_slot_mut(slot_position)?;
-        slot.collapse(None)
-    }
-
-    pub fn constrain_at(&mut self, change: &SlotChange) -> Option<SlotChange> {
-        let slot = self.get_slot_mut(change.position)?;
-        slot.change(change.new_protos.clone())
-    }
-
-    // private
-
-    fn get_slot_mut(&mut self, slot_position: Vector3i) -> Option<&mut Slot> {
+    pub fn get_slot_mut(&mut self, slot_position: Vector3i) -> Option<&mut Slot> {
         self.slots
             .get_mut(slot_position.y as usize)?
             .get_mut(slot_position.x as usize)?
             .get_mut(slot_position.z as usize)
     }
 
+    pub fn reset_slot(&mut self, slot_position: Vector3i) -> Option<SlotChange> {
+        let all_protos = self.proto_data.clone();
+        self.get_slot_mut(slot_position)?.change(&all_protos)
+    }
+
+    // private
+
     fn on_slots_changed(&mut self, changes: Vec<SlotChange>) -> DriverUpdate {
         for change in changes.iter() {
             let pos = change.position;
             let slot = &mut self.slots[pos.y as usize][pos.x as usize][pos.z as usize];
-            slot.change(change.new_protos.clone());
+            slot.change(&change.new_protos);
         }
         DriverUpdate::new_changes(changes)
     }
 
     fn prepare_next_chunk(&mut self) -> Option<DriverUpdate> {
-        self.current_chunk += 1;
         if self.current_chunk >= self.chunks.len() {
             godot_print!("All chunks processed. Stopping.");
             return Some(DriverUpdate::new_state(CollapserState::STOPPED));
@@ -114,23 +113,64 @@ impl Map {
             }
         }
 
-        let next_chunk = self.chunks[self.current_chunk];
-        next_chunk.reset_slots(overlapping, self);
-        next_chunk.propagate_from(neighboring, self);
-        next_chunk.apply_custom_constraints();
+        let mut changes = vec![];
 
-        None
+        let next_chunk = self.chunks[self.current_chunk];
+        for slot in overlapping.iter() {
+            if let Some(change) = self.reset_slot(*slot) {
+                changes.push(change);
+            }
+        }
+
+        next_chunk.apply_custom_constraints(self);
+
+        changes.append(&mut next_chunk.propagate_from(neighboring, self));
+
+        next_chunk.propagate_all(self);
+
+        Some(DriverUpdate::new_changes(changes))
     }
 }
 
-fn generate_slots(size: Vector3i, all_protos: Vec<Prototype>) -> Vec<Vec<Vec<Slot>>> {
+fn generate_slots(size: Vector3i, all_protos: &Vec<Prototype>) -> Vec<Vec<Vec<Slot>>> {
+    // let uncapped_x_min = Prototype::uncapped(all_protos, Vector3i::LEFT);
+    // let uncapped_x_max = Prototype::uncapped(all_protos, Vector3i::RIGHT);
+    // let uncapped_y_min = Prototype::uncapped(all_protos, Vector3i::DOWN);
+    // let uncapped_y_max = Prototype::uncapped(all_protos, Vector3i::UP);
+    // let uncapped_z_min = Prototype::uncapped(all_protos, Vector3i::FORWARD);
+    // let uncapped_z_max = Prototype::uncapped(all_protos, Vector3i::BACK);
+    // let not_bot = Prototype::not_constrained(all_protos, "BOT".into());
+
     let mut slots = vec![];
     for y in 0..size.y {
         let mut plane = vec![];
         for x in 0..size.x {
             let mut row = vec![];
             for z in 0..size.z {
-                let slot = Slot::new(Vector3i { x, y, z }, all_protos.clone());
+                let mut slot_protos = all_protos.clone();
+
+                if x == 0 {
+                    Prototype::retain_uncapped(&mut slot_protos, Vector3i::LEFT);
+                } else if x == size.x - 1 {
+                    Prototype::retain_uncapped(&mut slot_protos, Vector3i::RIGHT);
+                }
+
+                if y == 0 {
+                    Prototype::retain_uncapped(&mut slot_protos, Vector3i::DOWN);
+                } else {
+                    Prototype::retain_not_constrained(&mut slot_protos, "BOT".into());
+                    if y == size.y - 1 {
+                        Prototype::retain_uncapped(&mut slot_protos, Vector3i::UP);
+                    }
+                }
+
+                if z == 0 {
+                    Prototype::retain_uncapped(&mut slot_protos, Vector3i::FORWARD);
+                } else if z == size.z - 1 {
+                    Prototype::retain_uncapped(&mut slot_protos, Vector3i::BACK);
+                }
+
+                let slot = Slot::new(Vector3i { x, y, z }, slot_protos);
                 row.push(slot);
             }
             plane.push(row);
@@ -147,8 +187,8 @@ fn generate_chunks(size: Vector3i, chunk_size: Vector3i, chunk_overlap: i32) -> 
     let position_factor = chunk_size - Vector3i::ONE * chunk_overlap;
 
     let mut chunks = vec![];
-    for x in 0..num_x {
-        for y in 0..num_y {
+    for y in 0..num_y {
+        for x in 0..num_x {
             for z in 0..num_z {
                 let position = position_factor * Vector3i { x, y, z };
                 let new_chunk = Chunk::new(position, chunk_size);

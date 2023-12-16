@@ -1,8 +1,15 @@
 use std::{fs::File, io::Read};
 
-use godot::log::godot_print;
+use godot::{builtin::Vector3i, log::godot_print};
 use serde::Deserialize;
 use serde_json::{json, Value};
+
+const P_X: usize = 0;
+const P_Y: usize = 1;
+const N_X: usize = 2;
+const N_Y: usize = 3;
+const P_Z: usize = 4;
+const N_Z: usize = 5;
 
 #[derive(PartialEq, Clone, Debug, Deserialize)]
 pub struct Prototype {
@@ -41,6 +48,25 @@ impl Prototype {
                 let no_id = obj.get("no_id").or(Some(&json!(0)))?.as_i64()? as i32;
                 let no_id_sym = obj.get("no_id_sym").or(Some(&json!(0)))?.as_i64()? as i32;
 
+                let neighbors_json = obj.get("valid_neighbours")?.as_array()?;
+
+                let mut valid_neighbors = vec![];
+                for neighbor_value in neighbors_json {
+                    if let Some(neighbors) = neighbor_value.as_array() {
+                        let mut valid_neighbor_row = vec![];
+                        for neighbor in neighbors {
+                            match neighbor.as_str() {
+                                Some(neighbor_string) => {
+                                    valid_neighbor_row.push(neighbor_string.to_string())
+                                }
+                                None => godot_print!("skipping neighbor as it's not a string!"),
+                            }
+                        }
+                        valid_neighbors.push(valid_neighbor_row);
+                    }
+                }
+                // godot_print!("{:?}", valid_neighbors);
+
                 Some(Prototype {
                     id,
                     mesh_name,
@@ -56,15 +82,13 @@ impl Prototype {
                     weight,
                     no_id,
                     no_id_sym,
-                    valid_neighbors: vec![],
+                    valid_neighbors,
                 })
             }
             _ => None,
         }
     }
-}
 
-impl Prototype {
     pub fn load() -> Vec<Prototype> {
         let mut file = File::open("prototype_data.json").expect("Unable to open file");
         let mut contents = String::new();
@@ -88,5 +112,55 @@ impl Prototype {
         }
 
         protos
+    }
+
+    pub fn compatible_with(&self, other_id: String, direction: Vector3i) -> bool {
+        let direction_index = match direction {
+            Vector3i::UP => P_Z,
+            Vector3i::DOWN => N_Z,
+            Vector3i::RIGHT => P_X,
+            Vector3i::LEFT => N_X,
+            Vector3i::FORWARD => P_Y,
+            Vector3i::BACK => N_Y,
+            Vector3i { x: _, y: _, z: _ } => return false,
+        };
+
+        if let Some(neighbors) = self.valid_neighbors.get(direction_index) {
+            if neighbors.contains(&other_id) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    pub fn compatible_with_any(&self, others: &Vec<Prototype>, direction: Vector3i) -> bool {
+        others
+            .iter()
+            .any(|p| self.compatible_with(p.id.clone(), direction))
+    }
+
+    pub fn _uncapped(protos: &Vec<Prototype>, direction: Vector3i) -> Vec<Prototype> {
+        protos
+            .iter()
+            .filter(|p| p.compatible_with("p-1".into(), direction))
+            .cloned()
+            .collect()
+    }
+
+    pub fn retain_uncapped(protos: &mut Vec<Prototype>, direction: Vector3i) {
+        protos.retain(|p| p.compatible_with("p-1".into(), direction))
+    }
+
+    pub fn _not_constrained(protos: &Vec<Prototype>, constraint: String) -> Vec<Prototype> {
+        protos
+            .iter()
+            .filter(|p| p.constrain_to != constraint)
+            .cloned()
+            .collect()
+    }
+
+    pub fn retain_not_constrained(protos: &mut Vec<Prototype>, constraint: String) {
+        protos.retain(|p| p.constrain_to != constraint)
     }
 }

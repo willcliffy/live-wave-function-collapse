@@ -14,7 +14,6 @@ pub struct SlotChangeGodot {
     pub new_protos: String,
 }
 
-// #[godot_api]
 impl SlotChangeGodot {
     pub fn from_internal(position: Vector3i, protos: Vec<Prototype>) -> Self {
         let mut new_protos: String = protos.iter().map(|p| p.id.clone() + ",".into()).collect();
@@ -24,15 +23,6 @@ impl SlotChangeGodot {
             new_protos,
         }
     }
-
-    // #[func]
-    // fn unpack_protos(&mut self) -> Array<GString> {
-    //     let mut changes = Array::new();
-    //     self.new_protos
-    //         .split(",")
-    //         .for_each(|p| changes.push(p.into_godot()));
-    //     changes
-    // }
 }
 
 #[derive(GodotClass, Debug)]
