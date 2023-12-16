@@ -13,24 +13,25 @@ func _ready():
 
 
 func collapse(proto_name: String = String()):
-	if len(_possibilities) == 0:
-		return # TODO - we should not overcollapse, but we should definitely not try to collapse an overcollapsed cell
-
-	if proto_name.is_empty():
-		proto_name = _possibilities[randi() % len(_possibilities)]
+	#if len(_possibilities) == 0:
+		#return # TODO - we should not overcollapse, but we should definitely not try to collapse an overcollapsed cell
+#
+	#if proto_name.is_empty():
+		#proto_name = _possibilities[randi() % len(_possibilities)]
 
 	_collapsed_to = proto_name
+
+	if mesh:
+		mesh.visible = false
+		remove_child(mesh)
+		mesh = null
 
 	play_constrain_animation()
 
 	if proto_name == "-1" or proto_name == "p-1":
 		return
 
-	if mesh:
-		mesh.visible = false
-		remove_child(mesh)
-		mesh = null
-	
+
 	var proto_datum = Preload.ProtoData[proto_name]
 	var mesh_rotation = Vector3(0, proto_datum["mesh_rotation"] * PI/2, 0)
 	var mesh_instance = Preload.ProtoMeshes.get_node(proto_datum["mesh_name"]).duplicate()
