@@ -1,14 +1,12 @@
 use godot::{builtin::Vector3i, engine::utilities::ceili, log::godot_print};
 
-use crate::{
-    chunk::Chunk,
-    models::{
-        collapser_state::CollapserState,
-        driver_update::{DriverUpdate, SlotChange},
-        prototype::Prototype,
-    },
-    slot::Slot,
+use crate::models::{
+    collapser_state::CollapserState,
+    driver_update::{DriverUpdate, SlotChange},
+    prototype::Prototype,
 };
+
+use super::{chunk::Chunk, slot::Slot};
 
 pub struct Map {
     pub size: Vector3i,
@@ -122,11 +120,11 @@ impl Map {
             }
         }
 
-        next_chunk.apply_custom_constraints(self);
+        changes.append(&mut next_chunk.apply_custom_constraints(self));
+        changes.append(&mut next_chunk.propagate_all(self));
 
         changes.append(&mut next_chunk.propagate_from(neighboring, self));
-
-        next_chunk.propagate_all(self);
+        changes.append(&mut next_chunk.propagate_all(self));
 
         Some(DriverUpdate::new_changes(changes))
     }

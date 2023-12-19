@@ -12,12 +12,25 @@ func _ready():
 	$Highlight.material_override = Preload.SlotMaterial.duplicate()
 
 
+func change(new_possibilities: Array):
+	if len(new_possibilities) == 1:
+		collapse(new_possibilities[0])
+		return
+
+	if len(new_possibilities) == 0:
+		overconstrained()
+	elif len(new_possibilities) > len(_possibilities):
+		expand(new_possibilities)
+	else:
+		play_constrain_animation()
+
+	_possibilities = new_possibilities
+
+
 func collapse(proto_name: String = String()):
-	#if len(_possibilities) == 0:
-		#return # TODO - we should not overcollapse, but we should definitely not try to collapse an overcollapsed cell
-#
-	#if proto_name.is_empty():
-		#proto_name = _possibilities[randi() % len(_possibilities)]
+	if proto_name.is_empty():
+		overconstrained()
+		return
 
 	_collapsed_to = proto_name
 
@@ -31,7 +44,6 @@ func collapse(proto_name: String = String()):
 	if proto_name == "-1" or proto_name == "p-1":
 		return
 
-
 	var proto_datum = Preload.ProtoData[proto_name]
 	var mesh_rotation = Vector3(0, proto_datum["mesh_rotation"] * PI/2, 0)
 	var mesh_instance = Preload.ProtoMeshes.get_node(proto_datum["mesh_name"]).duplicate()
@@ -40,17 +52,6 @@ func collapse(proto_name: String = String()):
 	add_child(mesh_instance)
 	mesh_instance.owner = self
 	mesh = mesh_instance
-
-
-func constrain(new_possibilities: Array):
-	_possibilities = new_possibilities
-
-	if len(_possibilities) == 1:
-		collapse(_possibilities[0])
-	elif len(_possibilities) == 0:
-		overconstrained()
-	else:
-		play_constrain_animation()
 
 
 func expand(new_possibilities: Array):
@@ -65,7 +66,7 @@ func expand(new_possibilities: Array):
 
 func overconstrained():
 	if $Highlight.visible:
-		$Highlight.material_override.set("shader_parameter/start_time",  0.0)
+		$Highlight.material_override.set("shader_parameter/start_time",  INF)
 		$Highlight.material_override.set("shader_parameter/initial_color", Vector4(1, 0, 1, 0.5))
 
 func play_constrain_animation():

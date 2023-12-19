@@ -2,14 +2,13 @@ use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 
 use godot::prelude::*;
 
-use crate::{
-    map::Map,
-    models::{
-        collapser_action::{CollapserAction, CollapserActionType},
-        collapser_state::CollapserState,
-        driver_update::DriverUpdate,
-    },
+use crate::models::{
+    collapser_action::{CollapserAction, CollapserActionType},
+    collapser_state::CollapserState,
+    driver_update::DriverUpdate,
 };
+
+use super::map::Map;
 
 pub struct LWFCCollapser {
     state: CollapserState,

@@ -34,7 +34,7 @@ func _process(_delta):
 			var change_position = change[0]
 			var slot = slot_matrix[change_position.y][change_position.x][change_position.z]
 			if slot:
-				slot.constrain(change[1])
+				slot.change(change[1])
 
 
 func play_expand_animation(slot_position: Vector3, protos: Array):
@@ -49,10 +49,8 @@ func _on_slot_constrained(changes: Array):
 	# TODO
 	for raw_change in changes:
 		var change = raw_change["SlotChangeGodot"]
-		var change_protos: String = change["new_protos"]
-		if not change_protos:
-			continue
 		var change_position: Vector3i = change["position"]
+		var change_protos: String = change["new_protos"]
 		changes_queued.append([change_position, change_protos.split(",")])
 
 

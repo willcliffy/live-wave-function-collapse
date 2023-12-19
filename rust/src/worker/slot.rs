@@ -16,6 +16,26 @@ impl Slot {
         }
     }
 
+    pub fn changes_from(&self, other: &SlotChange) -> Option<SlotChange> {
+        let mut new_protos = vec![];
+        let direction = other.position - self.position;
+
+        for proto in self.possibilities.iter() {
+            if proto.compatible_with_any(&other.new_protos, direction) {
+                new_protos.push(proto.clone())
+            }
+        }
+
+        if new_protos.len() != self.possibilities.len() {
+            return Some(SlotChange {
+                position: self.position,
+                new_protos,
+            });
+        }
+
+        None
+    }
+
     pub fn change(&mut self, prototypes: &Vec<Prototype>) -> Option<SlotChange> {
         let old_length = self.possibilities.len();
 

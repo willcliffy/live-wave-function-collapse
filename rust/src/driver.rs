@@ -3,9 +3,9 @@ use std::thread::{self, JoinHandle};
 
 use godot::prelude::*;
 
-use crate::collapser::*;
 use crate::models::collapser_action::{CollapserAction, CollapserActionType};
 use crate::models::driver_update::DriverUpdate;
+use crate::worker::collapser::LWFCCollapser;
 
 #[derive(GodotClass)]
 #[class(base=Node3D)]
