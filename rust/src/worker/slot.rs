@@ -56,13 +56,14 @@ impl Slot {
 
         if let Some(proto) = prototype {
             self.possibilities = vec![proto];
+        } else if let Some(selected) = self.choose_weighted() {
+            self.possibilities = vec![selected];
         } else {
-            if let Some(selected) = self.choose_weighted() {
-                self.possibilities = vec![selected.clone()];
-            } else {
-                godot_print!("overcollapsed! {}", self.position);
-                self.possibilities = vec![];
-            }
+            godot_print!(
+                "Tried to collapse but already overcollapsed! {}",
+                self.position
+            );
+            self.possibilities = vec![];
         }
 
         if self.possibilities.len() != old_length {
@@ -83,13 +84,13 @@ impl Slot {
         self.possibilities.len() <= 1
     }
 
-    fn choose_weighted(&mut self) -> Option<&Prototype> {
+    fn choose_weighted(&mut self) -> Option<Prototype> {
         let sum_of_weights = self.possibilities.iter().fold(0.0, |l, p| l + p.weight);
         let mut selected_weight = rand::thread_rng().gen_range(0.0..sum_of_weights);
         for prototype in self.possibilities.iter() {
             selected_weight -= prototype.weight;
             if selected_weight <= 0.0 {
-                return Some(prototype);
+                return Some(prototype.clone());
             }
         }
 
@@ -98,6 +99,6 @@ impl Slot {
             sum_of_weights
         );
 
-        self.possibilities.last()
+        self.possibilities.last().cloned()
     }
 }

@@ -67,7 +67,7 @@ func expand(new_possibilities: Array):
 func overconstrained():
 	if $Highlight.visible:
 		$Highlight.material_override.set("shader_parameter/start_time",  INF)
-		$Highlight.material_override.set("shader_parameter/initial_color", Vector4(1, 0, 1, 0.5))
+		$Highlight.material_override.set("shader_parameter/initial_color", Vector4(1, 0, 1, 0.1))
 
 func play_constrain_animation():
 	if $Highlight.visible:

@@ -35,14 +35,14 @@ impl INode3D for LWFCDriver {
             _handle: None,
             send_to_thread: None,
             recv_in_main: None,
-            node,
             map_size: Vector3i {
-                x: 20,
-                y: 10,
-                z: 20,
+                x: 30,
+                y: 15,
+                z: 30,
             },
-            chunk_size: Vector3i { x: 6, y: 4, z: 6 },
+            chunk_size: Vector3i { x: 10, y: 6, z: 10 },
             chunk_overlap: 2,
+            node,
         }
     }
 
@@ -71,7 +71,7 @@ impl INode3D for LWFCDriver {
 
     fn process(&mut self, delta: f64) {
         for _ in 0..1 {
-            self.tick(delta)
+            self.tick(delta);
         }
     }
 
@@ -101,20 +101,19 @@ impl LWFCDriver {
         self.send_action(CollapserActionType::STOP)
     }
 
-    #[func]
-    pub fn tick(&mut self, _delta: f64) {
-        if let Some(update) = self.receive_update() {
-            if let Some(new_state) = update.new_state {
-                godot_print!("Ignoring state update from thread: {:?}", new_state);
-            }
-
-            if let Some(changes) = update.changes {
-                // godot_print!("Slots changed: {:?}", changes.len());
-                let changes_array = Array::from_iter(changes.iter().map(|c| c.to_godot()));
-                self.node
-                    .emit_signal("slots_changed".into(), &[changes_array.to_variant()]);
-            }
+    pub fn tick(&mut self, _delta: f64) -> Option<()> {
+        let update = self.receive_update()?;
+        if let Some(new_state) = update.new_state {
+            godot_print!("Ignoring state update from thread: {:?}", new_state);
         }
+
+        let changes = update.changes?;
+        // godot_print!("Slots changed: {:?}", changes.len());
+        let changes_array = Array::from_iter(changes.iter().map(|c| c.to_godot()));
+        self.node
+            .emit_signal("slots_changed".into(), &[changes_array.to_variant()]);
+
+        Some(())
     }
 
     fn receive_update(&mut self) -> Option<DriverUpdate> {

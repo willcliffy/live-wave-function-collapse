@@ -40,22 +40,18 @@ impl Map {
     }
 
     pub fn collapse_next(&mut self) -> Option<DriverUpdate> {
-        let chunk_res = self.chunks.get(self.current_chunk);
-        if let Some(chunk) = chunk_res {
-            let changed = chunk.clone().collapse_next(self);
-            return match changed {
-                Some(changes) => {
-                    // godot_print!("chunk collapsed next and got {:?} changes", changes.len());
-                    Some(self.on_slots_changed(changes))
-                }
-                None => {
-                    self.current_chunk += 1;
-                    self.prepare_next_chunk()
-                }
-            };
-        }
-
-        None
+        let chunk = self.chunks.get(self.current_chunk)?;
+        let changed = chunk.clone().collapse_next(self);
+        return match changed {
+            Some(changes) => {
+                // godot_print!("chunk collapsed next and got {:?} changes", changes.len());
+                Some(self.on_slots_changed(changes))
+            }
+            None => {
+                self.current_chunk += 1;
+                self.prepare_next_chunk()
+            }
+        };
     }
 
     // called "up" from chunks

@@ -84,23 +84,23 @@ impl LWFCCollapser {
         }
     }
 
-    fn collapse_next(&mut self) {
-        let update = self.map.collapse_next();
-        if let Some(update) = update {
-            if let Some(state) = update.new_state {
-                // TODO - apply the state update here if we have one.
-                // the collapser should have responsibility to stop itself
-                // plus the driver doesnt currently do anything with status updates.
-                if state == CollapserState::STOPPED {
-                    return self.stop();
-                }
+    fn collapse_next(&mut self) -> Option<()> {
+        let update = self.map.collapse_next()?;
+        if let Some(state) = update.new_state {
+            // TODO - apply the state update here if we have one.
+            // the collapser should have responsibility to stop itself
+            // plus the driver doesnt currently do anything with status updates.
+            if state == CollapserState::STOPPED {
+                self.stop();
+                return None;
             }
-
-            // TODO - this leads to uneven updates from the thread.
-            // Sometimes you'll post one change per tick and the main thread never catches up.
-            // Sometimes you'll post one large collapse and it will try to process the entire thing in one tick
-            self.post_changes(update)
         }
+
+        // TODO - this leads to uneven updates from the thread.
+        // Sometimes you'll post one change per tick and the main thread never catches up.
+        // Sometimes you'll post one large collapse and it will try to process the entire thing in one tick
+        self.post_changes(update);
+        None
     }
 
     fn on_message_received(&mut self, action: CollapserAction) {

@@ -18,10 +18,12 @@ impl Chunk {
         Self { position, size }
     }
 
+    // used in tests maybe?
     pub fn _get_all_slots(&self) -> Vec<Vector3i> {
         self.map_filter_slots(|position| Some(position))
     }
 
+    // Used to determine which cells to reset in the initialize chunk phase
     pub fn get_overlapping(&self, other: &Chunk) -> Vec<Vector3i> {
         let self_end = self.position + self.size;
         let other_end = other.position + other.size;
@@ -47,30 +49,20 @@ impl Chunk {
         overlap
     }
 
+    // Used to determine which cells to propagate changes in from in the initialize chunk phase
     pub fn get_neighbors(&self, other: &Chunk, n: i32) -> Vec<Vector3i> {
         other.map_filter_slots(|position| {
             if self.contains(position) {
-                println!(
-                    "returning none since {} is contained in this chunk",
-                    position
-                );
                 None
             } else if self.get_slot_neighbors(position, n).len() > 0 {
-                println!(
-                    "returning Some since {} has neighbors in this chunk",
-                    position
-                );
                 Some(position)
             } else {
-                println!(
-                    "returning none since {} has no neighbors in this chunk",
-                    position
-                );
                 None
             }
         })
     }
 
+    // Used in conjunction with get_neighbors to pull in changes from neighboring chunks
     pub fn propagate_from(&self, slots: Vec<Vector3i>, map: &mut Map) -> Vec<SlotChange> {
         let mut changes = vec![];
         for slot in slots {
@@ -88,23 +80,103 @@ impl Chunk {
         changes
     }
 
+    // Choose a slot contained within this chunk and collapse it
     pub fn collapse_next(&self, map: &mut Map) -> Option<Vec<SlotChange>> {
-        if let Some(slot_position) = self.select_lowest_entropy(map) {
-            if let Some(slot) = map.get_slot_mut(slot_position) {
-                let change = slot.collapse(None);
-                return match change {
-                    Some(change) => Some(self.propagate(&change, map)),
-                    None => {
-                        godot_print!("failed to collapse at {}", slot_position);
-                        None
+        let slot_position = self.select_lowest_entropy(map)?;
+        let slot = map.get_slot_mut(slot_position)?;
+        let change = slot.collapse(None)?;
+        Some(self.propagate(&change, map))
+    }
+
+    // No uncapped cells along the edge of the map. No uncapped cells along the top of the chunk
+    // Prototypes marked `"constrain_to": "BOT"` should only appear in cells where y = 0
+    pub fn apply_custom_constraints(&self, map: &mut Map) -> Vec<SlotChange> {
+        let map_size = map.size;
+        let chunk_top_y = min(self.position.y + self.size.y, map.size.y) - 1;
+
+        self.change_each_slot(map, |position, map| {
+            let slot = map.get_slot_mut(position)?;
+            let old_entropy = slot.possibilities.len();
+
+            if position.y == 0 {
+                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::DOWN);
+            } else {
+                Prototype::retain_not_constrained(&mut slot.possibilities, "BOT".into());
+            }
+
+            if position.y == chunk_top_y {
+                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::UP);
+            }
+
+            if position.x == 0 {
+                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::LEFT);
+            }
+
+            if position.x == map_size.x - 1 {
+                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::RIGHT);
+            }
+
+            if position.z == 0 {
+                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::FORWARD);
+            }
+
+            if position.z == map_size.z - 1 {
+                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::BACK);
+            }
+
+            if slot.possibilities.len() != old_entropy {
+                Some(vec![SlotChange {
+                    position,
+                    new_protos: slot.possibilities.clone(),
+                }])
+            } else {
+                None
+            }
+        })
+    }
+
+    // Should not be necessary theoretically, but useful in many situations and as part of several
+    //  strategies to maintain stability
+    pub fn propagate_all(&self, map: &mut Map) -> Vec<SlotChange> {
+        self.change_each_slot(map, |position, map| {
+            let slot = map.get_slot(position)?;
+            let slot_change = SlotChange {
+                position,
+                new_protos: slot.possibilities.clone(),
+            };
+            Some(self.propagate(&slot_change, map))
+        })
+    }
+
+    // Propagate a given cell change into other cells within this chunk
+    fn propagate(&self, change: &SlotChange, map: &mut Map) -> Vec<SlotChange> {
+        let mut changes: Vec<SlotChange> = vec![];
+        changes.push(change.clone());
+
+        for neighbor_position in self.get_slot_neighbors(change.position, 1).iter() {
+            if let Some(neighbor_slot) = map.get_slot_mut(*neighbor_position) {
+                if let Some(neighbor_change) = neighbor_slot.changes_from(change) {
+                    if neighbor_change.new_protos.len() == 0 {
+                        godot_print!(
+                            "overcollapsed {} while propagating {:?}",
+                            neighbor_position,
+                            change
+                        );
+                        continue;
                     }
-                };
+
+                    neighbor_slot.change(&neighbor_change.new_protos);
+                    changes.append(&mut self.propagate(&neighbor_change.clone(), map));
+                }
             }
         }
 
-        None
+        changes
     }
 
+    // Select the "lowest entropy" cell and collapse it.
+    // In reality, there are some rules in place to maintain stability that mean that this is often
+    //  not the true lowest-entropy cell.
     fn select_lowest_entropy(&self, map: &mut Map) -> Option<Vector3i> {
         let mut lowest_entropy = usize::MAX;
         let mut lowest_entropy_slots = vec![];
@@ -128,7 +200,7 @@ impl Chunk {
                         if y == 0 {
                             entropy += 100;
                         } else {
-                            entropy += y as usize;
+                            //entropy += y as usize;
                         }
 
                         if entropy < lowest_entropy {
@@ -137,7 +209,9 @@ impl Chunk {
                         } else if entropy == lowest_entropy {
                             lowest_entropy_slots.push(position);
                         } else {
-                            unreachable!()
+                            // TODO - this is reachable since we added custom entropy rules
+                            // need to think about what to do here.
+                            // unreachable!()
                         }
                     }
                 }
@@ -152,6 +226,7 @@ impl Chunk {
         None
     }
 
+    // Returns true iff the given position is located within this chunk
     fn contains(&self, position: Vector3i) -> bool {
         let start = self.position;
         let end = self.position + self.size;
@@ -164,6 +239,9 @@ impl Chunk {
             && position.z < end.z
     }
 
+    // Get all neighboring slots that are exactly one unit away, measured using Manhattan distance
+    // That is, only check the 6 cardinal directions directly adjacent to slot_position
+    // Diagonal slots are not returned. Slots that are not within this chunk are not returned.
     fn get_slot_neighbors(self, slot_position: Vector3i, n: i32) -> Vec<Vector3i> {
         let mut neighbors = vec![];
         for direction in DIRECTIONS {
@@ -178,158 +256,9 @@ impl Chunk {
         neighbors
     }
 
-    pub fn apply_custom_constraints(&self, map: &mut Map) -> Vec<SlotChange> {
-        let chunk_top_y = min(self.position.y + self.size.y, map.size.y) - 1;
-        self.change_each_slot(map, |position, map| {
-            let map_size = map.size;
-            let slot = map.get_slot_mut(position);
-            if let Some(slot) = slot {
-                let old_entropy = slot.possibilities.len();
+    // ITERATING UTILS
 
-                if position.y == 0 {
-                    Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::DOWN);
-                } else {
-                    Prototype::retain_not_constrained(&mut slot.possibilities, "BOT".into());
-                }
-
-                if position.y == chunk_top_y {
-                    Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::UP);
-                }
-
-                if position.x == 0 {
-                    Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::LEFT);
-                }
-
-                if position.x == map_size.x - 1 {
-                    Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::RIGHT);
-                }
-
-                if position.z == 0 {
-                    Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::FORWARD);
-                }
-
-                if position.z == map_size.z - 1 {
-                    Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::BACK);
-                }
-
-                if slot.possibilities.len() != old_entropy {
-                    return vec![SlotChange {
-                        position,
-                        new_protos: slot.possibilities.clone(),
-                    }];
-                }
-            }
-
-            vec![]
-        })
-
-        // for x in start.x..end.x {
-        //     for y in start.y..end.y {
-        //         for z in start.z..end.z {
-        //             let position = Vector3i { x, y, z };
-        //             let slot = map.get_slot_mut(position);
-        //             if let Some(slot) = slot {
-        //                 let old_entropy = slot.possibilities.len();
-        //                 if position.y == 0 {
-        //                     Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::DOWN);
-        //                 } else {
-        //                     Prototype::retain_not_constrained(
-        //                         &mut slot.possibilities,
-        //                         "BOT".into(),
-        //                     );
-        //                 }
-
-        //                 if position.y == chunk_top_y {
-        //                     Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::UP);
-        //                 }
-
-        //                 if position.x == 0 {
-        //                     Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::LEFT);
-        //                 }
-
-        //                 if position.x == map_size.x - 1 {
-        //                     Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::RIGHT);
-        //                 }
-
-        //                 if position.z == 0 {
-        //                     Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::FORWARD);
-        //                 }
-
-        //                 if position.z == map_size.z - 1 {
-        //                     Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::BACK);
-        //                 }
-
-        //                 if slot.possibilities.len() != old_entropy {
-        //                     changes.push(SlotChange {
-        //                         position,
-        //                         new_protos: slot.possibilities.clone(),
-        //                     })
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
-        // changes
-    }
-
-    fn propagate(&self, change: &SlotChange, map: &mut Map) -> Vec<SlotChange> {
-        let mut changes: Vec<SlotChange> = vec![];
-        changes.push(change.clone());
-
-        for neighbor in self.get_slot_neighbors(change.position, 1).iter() {
-            if let Some(neighbor_slot) = map.get_slot_mut(*neighbor) {
-                if let Some(neighbor_change) = neighbor_slot.changes_from(change) {
-                    neighbor_slot.change(&neighbor_change.new_protos);
-                    changes.append(&mut self.propagate(&neighbor_change.clone(), map));
-                }
-            }
-        }
-
-        changes
-    }
-
-    pub fn propagate_all(&self, map: &mut Map) -> Vec<SlotChange> {
-        self.change_each_slot(map, |position, map| {
-            if let Some(slot) = map.get_slot(position) {
-                return self.propagate(
-                    &SlotChange {
-                        position,
-                        new_protos: slot.possibilities.clone(),
-                    },
-                    map,
-                );
-            }
-
-            vec![]
-        })
-
-        // let mut changes = vec![];
-
-        // let start = self.position;
-        // let end = self.position + self.size;
-        // for x in start.x..end.x {
-        //     for y in start.y..end.y {
-        //         for z in start.z..end.z {
-        //             let position = Vector3i { x, y, z };
-        //             let slot = map.get_slot(position);
-        //             if let Some(slot) = slot {
-        //                 changes.append(&mut self.propagate(
-        //                     &SlotChange {
-        //                         position: position,
-        //                         new_protos: slot.possibilities.clone(),
-        //                     },
-        //                     map,
-        //                 ))
-        //             }
-        //         }
-        //     }
-        // }
-
-        // changes
-    }
-
-    fn change_each_slot<F: Fn(Vector3i, &mut Map) -> Vec<SlotChange>>(
+    fn change_each_slot<F: Fn(Vector3i, &mut Map) -> Option<Vec<SlotChange>>>(
         &self,
         map: &mut Map,
         f: F,
@@ -341,7 +270,9 @@ impl Chunk {
         for x in start.x..end.x {
             for y in start.y..end.y {
                 for z in start.z..end.z {
-                    changes.append(&mut f(Vector3i { x, y, z }, map))
+                    if let Some(mut changes_applied) = f(Vector3i { x, y, z }, map) {
+                        changes.append(&mut changes_applied)
+                    }
                 }
             }
         }
