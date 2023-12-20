@@ -1,6 +1,6 @@
 [gd_scene load_steps=14 format=3 uid="uid://c18c4wr5vufng"]
 
-[ext_resource type="Script" path="res://src/slot.gd" id="1_hc50x"]
+[ext_resource type="Script" path="res://src/cell.gd" id="1_hc50x"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ngo6w"]
 transparency = 1
@@ -50,7 +50,7 @@ albedo_color = Color(0.823529, 0.4, 0, 0.501961)
 [sub_resource type="BoxMesh" id="BoxMesh_focph"]
 material = SubResource("StandardMaterial3D_8txte")
 
-[node name="Slot" type="Node3D"]
+[node name="Cell" type="Node3D"]
 script = ExtResource("1_hc50x")
 
 [node name="SelectedHighlight" type="MeshInstance3D" parent="."]

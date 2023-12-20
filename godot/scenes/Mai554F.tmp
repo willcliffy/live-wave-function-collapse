@@ -135,5 +135,5 @@ text = "redo  >"
 [connection signal="apply_custom_constraints" from="Container/Controls" to="Container/Map" method="_on_apply_custom_constraints_pressed"]
 [connection signal="auto_collapse_toggled" from="Container/Controls" to="Container/Map" method="set_auto_collapse"]
 [connection signal="show_axes_toggled" from="Container/Controls" to="Container/Map" method="toggle_axes"]
-[connection signal="size_set" from="Container/Controls" to="Container/Map" method="generate_slots"]
+[connection signal="size_set" from="Container/Controls" to="Container/Map" method="generate_cells"]
 [connection signal="pressed" from="Container/Options/History/VBoxContainer/HBoxContainer/Undo" to="Container/Map" method="_on_undo_pressed"]

@@ -31,25 +31,25 @@ func _get_all_children(in_node, arr := []):
 
 
 func _finalize_map():
-	var slot_array = []
-	for plane in map_builder.slot_matrix:
+	var cell_array = []
+	for plane in map_builder.cell_matrix:
 		for row in plane:
-			for slot in row:
-				slot_array.append(slot)
+			for cell in row:
+				cell_array.append(cell)
 
 	var modules = preload("res://wfc_modules.glb").instantiate()
 	var scene = preload("res://scenes/MapFinal.tscn").instantiate()
 
-	for slot in slot_array:
-		if slot._collapsed_to.is_empty() or slot._collapsed_to == "p-1":
+	for cell in cell_array:
+		if cell._collapsed_to.is_empty() or cell._collapsed_to == "p-1":
 			continue
 
-		var proto_datum = {} # WFC._proto_data[slot._collapsed_to]
+		var proto_datum = {} # WFC._proto_data[cell._collapsed_to]
 		var mesh_rotation = Vector3(0, proto_datum["mesh_rotation"] * PI/2, 0)
 		var mesh_instance: MeshInstance3D = modules.get_node(proto_datum["mesh_name"]).duplicate()
 
-		mesh_instance.name = "%s" % [slot.position]
-		mesh_instance.position = slot.position
+		mesh_instance.name = "%s" % [cell.position]
+		mesh_instance.position = cell.position
 		mesh_instance.rotation = mesh_rotation 
 		scene.add_child(mesh_instance)
 		mesh_instance.owner = scene

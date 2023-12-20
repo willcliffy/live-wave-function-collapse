@@ -9,7 +9,7 @@ var highlight_enabled = false
 
 
 func _ready():
-	$Highlight.material_override = Preload.SlotMaterial.duplicate()
+	$Highlight.material_override = Preload.CellMaterial.duplicate()
 
 
 func change(new_possibilities: Array):

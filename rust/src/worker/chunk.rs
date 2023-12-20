@@ -3,7 +3,7 @@ use std::cmp::min;
 use godot::prelude::*;
 use rand::Rng;
 
-use crate::models::{driver_update::SlotChange, prototype::Prototype};
+use crate::models::{driver_update::CellChange, prototype::Prototype};
 
 use super::map::Map;
 
@@ -19,8 +19,8 @@ impl Chunk {
     }
 
     // used in tests maybe?
-    pub fn _get_all_slots(&self) -> Vec<Vector3i> {
-        self.map_filter_slots(|position| Some(position))
+    pub fn _get_all_cells(&self) -> Vec<Vector3i> {
+        self.map_filter_cells(|position| Some(position))
     }
 
     // Used to determine which cells to reset in the initialize chunk phase
@@ -51,10 +51,10 @@ impl Chunk {
 
     // Used to determine which cells to propagate changes in from in the initialize chunk phase
     pub fn get_neighbors(&self, other: &Chunk, n: i32) -> Vec<Vector3i> {
-        other.map_filter_slots(|position| {
+        other.map_filter_cells(|position| {
             if self.contains(position) {
                 None
-            } else if self.get_slot_neighbors(position, n).len() > 0 {
+            } else if self.get_cell_neighbors(position, n).len() > 0 {
                 Some(position)
             } else {
                 None
@@ -63,14 +63,14 @@ impl Chunk {
     }
 
     // Used in conjunction with get_neighbors to pull in changes from neighboring chunks
-    pub fn propagate_from(&self, slots: Vec<Vector3i>, map: &mut Map) -> Vec<SlotChange> {
+    pub fn propagate_from(&self, cells: Vec<Vector3i>, map: &mut Map) -> Vec<CellChange> {
         let mut changes = vec![];
-        for slot in slots {
-            if let Some(slot) = map.get_slot(slot) {
+        for cell in cells {
+            if let Some(cell) = map.get_cell(cell) {
                 changes.append(&mut self.propagate(
-                    &SlotChange {
-                        position: slot.position,
-                        new_protos: slot.possibilities.clone(),
+                    &CellChange {
+                        position: cell.position,
+                        new_protos: cell.possibilities.clone(),
                     },
                     map,
                 ))
@@ -80,54 +80,54 @@ impl Chunk {
         changes
     }
 
-    // Choose a slot contained within this chunk and collapse it
-    pub fn collapse_next(&self, map: &mut Map) -> Option<Vec<SlotChange>> {
-        let slot_position = self.select_lowest_entropy(map)?;
-        let slot = map.get_slot_mut(slot_position)?;
-        let change = slot.collapse(None)?;
+    // Choose a cell contained within this chunk and collapse it
+    pub fn collapse_next(&self, map: &mut Map) -> Option<Vec<CellChange>> {
+        let cell_position = self.select_lowest_entropy(map)?;
+        let cell = map.get_cell_mut(cell_position)?;
+        let change = cell.collapse(None)?;
         Some(self.propagate(&change, map))
     }
 
     // No uncapped cells along the edge of the map. No uncapped cells along the top of the chunk
     // Prototypes marked `"constrain_to": "BOT"` should only appear in cells where y = 0
-    pub fn apply_custom_constraints(&self, map: &mut Map) -> Vec<SlotChange> {
+    pub fn apply_custom_constraints(&self, map: &mut Map) -> Vec<CellChange> {
         let map_size = map.size;
         let chunk_top_y = min(self.position.y + self.size.y, map.size.y) - 1;
 
-        self.change_each_slot(map, |position, map| {
-            let slot = map.get_slot_mut(position)?;
-            let old_entropy = slot.possibilities.len();
+        self.change_each_cell(map, |position, map| {
+            let cell = map.get_cell_mut(position)?;
+            let old_entropy = cell.possibilities.len();
 
             if position.y == 0 {
-                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::DOWN);
+                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::DOWN);
             } else {
-                Prototype::retain_not_constrained(&mut slot.possibilities, "BOT".into());
+                Prototype::retain_not_constrained(&mut cell.possibilities, "BOT".into());
             }
 
             if position.y == chunk_top_y {
-                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::UP);
+                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::UP);
             }
 
             if position.x == 0 {
-                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::LEFT);
+                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::LEFT);
             }
 
             if position.x == map_size.x - 1 {
-                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::RIGHT);
+                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::RIGHT);
             }
 
             if position.z == 0 {
-                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::FORWARD);
+                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::FORWARD);
             }
 
             if position.z == map_size.z - 1 {
-                Prototype::retain_uncapped(&mut slot.possibilities, Vector3i::BACK);
+                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::BACK);
             }
 
-            if slot.possibilities.len() != old_entropy {
-                Some(vec![SlotChange {
+            if cell.possibilities.len() != old_entropy {
+                Some(vec![CellChange {
                     position,
-                    new_protos: slot.possibilities.clone(),
+                    new_protos: cell.possibilities.clone(),
                 }])
             } else {
                 None
@@ -137,25 +137,25 @@ impl Chunk {
 
     // Should not be necessary theoretically, but useful in many situations and as part of several
     //  strategies to maintain stability
-    pub fn propagate_all(&self, map: &mut Map) -> Vec<SlotChange> {
-        self.change_each_slot(map, |position, map| {
-            let slot = map.get_slot(position)?;
-            let slot_change = SlotChange {
+    pub fn propagate_all(&self, map: &mut Map) -> Vec<CellChange> {
+        self.change_each_cell(map, |position, map| {
+            let cell = map.get_cell(position)?;
+            let cell_change = CellChange {
                 position,
-                new_protos: slot.possibilities.clone(),
+                new_protos: cell.possibilities.clone(),
             };
-            Some(self.propagate(&slot_change, map))
+            Some(self.propagate(&cell_change, map))
         })
     }
 
     // Propagate a given cell change into other cells within this chunk
-    fn propagate(&self, change: &SlotChange, map: &mut Map) -> Vec<SlotChange> {
-        let mut changes: Vec<SlotChange> = vec![];
+    fn propagate(&self, change: &CellChange, map: &mut Map) -> Vec<CellChange> {
+        let mut changes: Vec<CellChange> = vec![];
         changes.push(change.clone());
 
-        for neighbor_position in self.get_slot_neighbors(change.position, 1).iter() {
-            if let Some(neighbor_slot) = map.get_slot_mut(*neighbor_position) {
-                if let Some(neighbor_change) = neighbor_slot.changes_from(change) {
+        for neighbor_position in self.get_cell_neighbors(change.position, 1).iter() {
+            if let Some(neighbor_cell) = map.get_cell_mut(*neighbor_position) {
+                if let Some(neighbor_change) = neighbor_cell.changes_from(change) {
                     if neighbor_change.new_protos.len() == 0 {
                         godot_print!(
                             "overcollapsed {} while propagating {:?}",
@@ -165,7 +165,7 @@ impl Chunk {
                         continue;
                     }
 
-                    neighbor_slot.change(&neighbor_change.new_protos);
+                    neighbor_cell.change(&neighbor_change.new_protos);
                     changes.append(&mut self.propagate(&neighbor_change.clone(), map));
                 }
             }
@@ -179,7 +179,7 @@ impl Chunk {
     //  not the true lowest-entropy cell.
     fn select_lowest_entropy(&self, map: &mut Map) -> Option<Vector3i> {
         let mut lowest_entropy = usize::MAX;
-        let mut lowest_entropy_slots = vec![];
+        let mut lowest_entropy_cells = vec![];
 
         let start = self.position;
         let end = self.position + self.size;
@@ -187,9 +187,9 @@ impl Chunk {
             for y in self.position.y..end.y {
                 for z in self.position.z..end.z {
                     let position = Vector3i { x, y, z };
-                    let slot = map.get_slot(position);
-                    if let Some(slot) = slot {
-                        let mut entropy = slot.entropy();
+                    let cell = map.get_cell(position);
+                    if let Some(cell) = cell {
+                        let mut entropy = cell.entropy();
                         if entropy <= 1 || entropy > lowest_entropy {
                             continue;
                         }
@@ -205,9 +205,9 @@ impl Chunk {
 
                         if entropy < lowest_entropy {
                             lowest_entropy = entropy;
-                            lowest_entropy_slots = vec![position];
+                            lowest_entropy_cells = vec![position];
                         } else if entropy == lowest_entropy {
-                            lowest_entropy_slots.push(position);
+                            lowest_entropy_cells.push(position);
                         } else {
                             // TODO - this is reachable since we added custom entropy rules
                             // need to think about what to do here.
@@ -218,9 +218,9 @@ impl Chunk {
             }
         }
 
-        if lowest_entropy_slots.len() >= 1 {
-            let selected_weight = rand::thread_rng().gen_range(0..lowest_entropy_slots.len());
-            return Some(lowest_entropy_slots[selected_weight]);
+        if lowest_entropy_cells.len() >= 1 {
+            let selected_weight = rand::thread_rng().gen_range(0..lowest_entropy_cells.len());
+            return Some(lowest_entropy_cells[selected_weight]);
         }
 
         None
@@ -239,14 +239,14 @@ impl Chunk {
             && position.z < end.z
     }
 
-    // Get all neighboring slots that are exactly one unit away, measured using Manhattan distance
-    // That is, only check the 6 cardinal directions directly adjacent to slot_position
-    // Diagonal slots are not returned. Slots that are not within this chunk are not returned.
-    fn get_slot_neighbors(self, slot_position: Vector3i, n: i32) -> Vec<Vector3i> {
+    // Get all neighboring cells that are exactly one unit away, measured using Manhattan distance
+    // That is, only check the 6 cardinal directions directly adjacent to cell_position
+    // Diagonal cells are not returned. Cells that are not within this chunk are not returned.
+    fn get_cell_neighbors(self, cell_position: Vector3i, n: i32) -> Vec<Vector3i> {
         let mut neighbors = vec![];
         for direction in DIRECTIONS {
             for i in 1..=n {
-                let neighbor_position = slot_position + (*direction * i);
+                let neighbor_position = cell_position + (*direction * i);
                 if self.contains(neighbor_position) {
                     neighbors.push(neighbor_position);
                 }
@@ -258,11 +258,11 @@ impl Chunk {
 
     // ITERATING UTILS
 
-    fn change_each_slot<F: Fn(Vector3i, &mut Map) -> Option<Vec<SlotChange>>>(
+    fn change_each_cell<F: Fn(Vector3i, &mut Map) -> Option<Vec<CellChange>>>(
         &self,
         map: &mut Map,
         f: F,
-    ) -> Vec<SlotChange> {
+    ) -> Vec<CellChange> {
         let mut changes = vec![];
 
         let start = self.position;
@@ -280,8 +280,8 @@ impl Chunk {
         changes
     }
 
-    fn map_filter_slots<F: Fn(Vector3i) -> Option<Vector3i>>(&self, f: F) -> Vec<Vector3i> {
-        let mut slots = vec![];
+    fn map_filter_cells<F: Fn(Vector3i) -> Option<Vector3i>>(&self, f: F) -> Vec<Vector3i> {
+        let mut cells = vec![];
 
         let start = self.position;
         let end = self.position + self.size;
@@ -289,13 +289,13 @@ impl Chunk {
             for y in start.y..end.y {
                 for z in start.z..end.z {
                     if let Some(position) = f(Vector3i { x, y, z }) {
-                        slots.push(position);
+                        cells.push(position);
                     }
                 }
             }
         }
 
-        slots
+        cells
     }
 }
 

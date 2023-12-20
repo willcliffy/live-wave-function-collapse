@@ -58,5 +58,3 @@ mesh = SubResource("BoxMesh_dwly7")
 
 [node name="LWFCDriver" type="LWFCDriver" parent="."]
 visible = false
-
-[connection signal="slots_changed" from="LWFCDriver" to="." method="_on_slot_constrained"]

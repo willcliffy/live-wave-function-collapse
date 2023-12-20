@@ -1,14 +1,14 @@
 use godot::prelude::*;
 use rand::prelude::*;
 
-use crate::models::{driver_update::SlotChange, prototype::Prototype};
+use crate::models::{driver_update::CellChange, prototype::Prototype};
 
-pub struct Slot {
+pub struct Cell {
     pub position: Vector3i,
     pub possibilities: Vec<Prototype>,
 }
 
-impl Slot {
+impl Cell {
     pub fn new(position: Vector3i, possibilities: Vec<Prototype>) -> Self {
         Self {
             position,
@@ -16,7 +16,7 @@ impl Slot {
         }
     }
 
-    pub fn changes_from(&self, other: &SlotChange) -> Option<SlotChange> {
+    pub fn changes_from(&self, other: &CellChange) -> Option<CellChange> {
         let mut new_protos = vec![];
         let direction = other.position - self.position;
 
@@ -27,7 +27,7 @@ impl Slot {
         }
 
         if new_protos.len() != self.possibilities.len() {
-            return Some(SlotChange {
+            return Some(CellChange {
                 position: self.position,
                 new_protos,
             });
@@ -36,13 +36,13 @@ impl Slot {
         None
     }
 
-    pub fn change(&mut self, prototypes: &Vec<Prototype>) -> Option<SlotChange> {
+    pub fn change(&mut self, prototypes: &Vec<Prototype>) -> Option<CellChange> {
         let old_length = self.possibilities.len();
 
         self.possibilities = prototypes.clone();
 
         if self.possibilities.len() != old_length {
-            return Some(SlotChange {
+            return Some(CellChange {
                 position: self.position,
                 new_protos: self.possibilities.clone(),
             });
@@ -51,7 +51,7 @@ impl Slot {
         None
     }
 
-    pub fn collapse(&mut self, prototype: Option<Prototype>) -> Option<SlotChange> {
+    pub fn collapse(&mut self, prototype: Option<Prototype>) -> Option<CellChange> {
         let old_length = self.possibilities.len();
 
         if let Some(proto) = prototype {
@@ -67,7 +67,7 @@ impl Slot {
         }
 
         if self.possibilities.len() != old_length {
-            return Some(SlotChange {
+            return Some(CellChange {
                 position: self.position,
                 new_protos: self.possibilities.clone(), // TODO - can we avoid cloning here?
             });

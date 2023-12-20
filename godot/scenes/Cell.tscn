@@ -1,13 +1,13 @@
 [gd_scene load_steps=4 format=3 uid="uid://c18c4wr5vufng"]
 
-[ext_resource type="Script" path="res://src/slot.gd" id="1_hc50x"]
+[ext_resource type="Script" path="res://src/cell.gd" id="1_1bk8w"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_dd8oc"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_ijroo"]
 
 [node name="Slot" type="Node3D"]
-script = ExtResource("1_hc50x")
+script = ExtResource("1_1bk8w")
 
 [node name="Highlight" type="MeshInstance3D" parent="."]
 material_override = SubResource("ShaderMaterial_dd8oc")

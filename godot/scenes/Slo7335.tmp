@@ -1,6 +1,6 @@
 [gd_scene load_steps=15 format=3 uid="uid://c18c4wr5vufng"]
 
-[ext_resource type="Script" path="res://src/slot.gd" id="1_hc50x"]
+[ext_resource type="Script" path="res://src/cell.gd" id="1_hc50x"]
 
 [sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_0h5ys"]
 data = PackedVector3Array(-0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5)
@@ -53,7 +53,7 @@ albedo_color = Color(0.823529, 0.4, 0, 0.501961)
 [sub_resource type="BoxMesh" id="BoxMesh_focph"]
 material = SubResource("StandardMaterial3D_8txte")
 
-[node name="Slot" type="Area3D"]
+[node name="Cell" type="Area3D"]
 script = ExtResource("1_hc50x")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]

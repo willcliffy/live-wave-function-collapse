@@ -89,7 +89,7 @@ impl LWFCDriver {
     fn map_completed();
 
     #[signal]
-    fn slots_changed(changes: Array<Dictionary>);
+    fn cells_changed(changes: Array<Dictionary>);
 
     #[func]
     pub fn start(&mut self) {
@@ -108,10 +108,10 @@ impl LWFCDriver {
         }
 
         let changes = update.changes?;
-        // godot_print!("Slots changed: {:?}", changes.len());
+        // godot_print!("Cells changed: {:?}", changes.len());
         let changes_array = Array::from_iter(changes.iter().map(|c| c.to_godot()));
         self.node
-            .emit_signal("slots_changed".into(), &[changes_array.to_variant()]);
+            .emit_signal("cells_changed".into(), &[changes_array.to_variant()]);
 
         Some(())
     }

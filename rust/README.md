@@ -2,7 +2,7 @@
 
 Currently:
 Driver interacts with Godot and manages the single Collapser thread.
-The Collapser thread contains the map. The map contains slots and chunks. The chunks are allowed to operate on slots through mutable reference to map.
+The Collapser thread contains the map. The map contains cells and chunks. The chunks are allowed to operate on cells through mutable reference to map.
 
 Ideally:
 Driver stays as is.
