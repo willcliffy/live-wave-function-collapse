@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use super::{collapser_state::CollapserState, prototype::Prototype};
+use super::{manager::ManagerState, prototype::Prototype};
 
 #[derive(Debug, Clone)]
 pub struct CellChange {
@@ -26,22 +26,22 @@ impl CellChangeGodot {
 }
 
 #[derive(GodotClass, Debug)]
-pub struct DriverUpdate {
-    pub new_state: Option<CollapserState>,
+pub struct ManagerUpdate {
+    pub new_state: Option<ManagerState>,
     pub changes: Option<Vec<CellChangeGodot>>,
 }
 
-impl DriverUpdate {
-    pub fn new(new_state: Option<CollapserState>, changes: Option<Vec<CellChangeGodot>>) -> Self {
+impl ManagerUpdate {
+    pub fn new(new_state: Option<ManagerState>, changes: Option<Vec<CellChangeGodot>>) -> Self {
         Self { new_state, changes }
     }
 
-    pub fn new_state(new_state: CollapserState) -> Self {
-        DriverUpdate::new(Some(new_state), None)
+    pub fn new_state(new_state: ManagerState) -> Self {
+        ManagerUpdate::new(Some(new_state), None)
     }
 
     pub fn new_changes(changes: Vec<CellChange>) -> Self {
-        DriverUpdate::new(
+        ManagerUpdate::new(
             None,
             Some(
                 changes

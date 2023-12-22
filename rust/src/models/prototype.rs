@@ -59,7 +59,9 @@ impl Prototype {
                                 Some(neighbor_string) => {
                                     valid_neighbor_row.push(neighbor_string.to_string())
                                 }
-                                None => godot_print!("skipping neighbor as it's not a string!"),
+                                None => godot_print!(
+                                    "[PROTOTYPE] skipping neighbor as it's not a string!"
+                                ),
                             }
                         }
                         valid_neighbors.push(valid_neighbor_row);
@@ -104,11 +106,11 @@ impl Prototype {
                 if let Some(parsed_struct) = Prototype::from_json_value(key.to_string(), value) {
                     protos.push(parsed_struct)
                 } else {
-                    godot_print!("failed to parse Prototype '{}', ignoring", key);
+                    godot_print!("[PROTOTYPE] failed to parse '{}', ignoring", key);
                 }
             }
         } else {
-            println!("The parsed JSON is not an object");
+            println!("[PROTOTYPE] The parsed JSON is not an object");
         }
 
         protos

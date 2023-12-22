@@ -3,9 +3,43 @@ use rand::prelude::*;
 
 use crate::models::{driver_update::CellChange, prototype::Prototype};
 
+use super::library::Book;
+
+#[derive(Clone, Debug)]
 pub struct Cell {
     pub position: Vector3i,
     pub possibilities: Vec<Prototype>,
+
+    // Book traits
+    version: String,
+    locked: bool,
+}
+
+impl Book for Cell {
+    fn location(&self) -> Vector3i {
+        self.position
+    }
+
+    fn version(&self) -> String {
+        self.version.clone()
+    }
+
+    fn set_version(&mut self, version: String) {
+        self.version = version;
+    }
+
+    fn is_checked_out(&self) -> bool {
+        self.locked
+    }
+
+    fn check_out(&mut self) -> bool {
+        if self.is_checked_out() {
+            return false;
+        }
+
+        self.locked = true;
+        true
+    }
 }
 
 impl Cell {
@@ -13,24 +47,25 @@ impl Cell {
         Self {
             position,
             possibilities,
+            version: "".into(),
+            locked: false,
         }
     }
 
-    pub fn changes_from(&self, other: &CellChange) -> Option<CellChange> {
+    pub fn changes_from(&self, other: &Cell) -> Option<Cell> {
         let mut new_protos = vec![];
         let direction = other.position - self.position;
 
         for proto in self.possibilities.iter() {
-            if proto.compatible_with_any(&other.new_protos, direction) {
+            if proto.compatible_with_any(&other.possibilities, direction) {
                 new_protos.push(proto.clone())
             }
         }
 
         if new_protos.len() != self.possibilities.len() {
-            return Some(CellChange {
-                position: self.position,
-                new_protos,
-            });
+            let mut changed = self.clone();
+            changed.change(&new_protos);
+            return Some(changed);
         }
 
         None

@@ -27,7 +27,7 @@ albedo_color = Color(0.196078, 0.196078, 0.196078, 0.392157)
 [sub_resource type="BoxMesh" id="BoxMesh_dwly7"]
 material = SubResource("StandardMaterial3D_2cr7v")
 
-[node name="MapBuilder" type="LWFCCollapser"]
+[node name="MapBuilder" type="Collapser"]
 process_mode = 1
 script = ExtResource("1_lqyqi")
 

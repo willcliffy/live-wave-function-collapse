@@ -3,9 +3,9 @@ use std::cmp::min;
 use godot::prelude::*;
 use rand::Rng;
 
-use crate::models::{driver_update::CellChange, prototype::Prototype};
+use crate::models::prototype::Prototype;
 
-use super::map::Map;
+use super::cell::Cell;
 
 #[derive(Clone, Copy)]
 pub struct Chunk {
@@ -18,9 +18,8 @@ impl Chunk {
         Self { position, size }
     }
 
-    // used in tests maybe?
-    pub fn _get_all_cells(&self) -> Vec<Vector3i> {
-        self.map_filter_cells(|position| Some(position))
+    pub fn bounds(&self) -> (Vector3i, Vector3i) {
+        (self.position, self.position + self.size)
     }
 
     // Used to determine which cells to reset in the initialize chunk phase
@@ -63,110 +62,88 @@ impl Chunk {
     }
 
     // Used in conjunction with get_neighbors to pull in changes from neighboring chunks
-    pub fn propagate_from(&self, cells: Vec<Vector3i>, map: &mut Map) -> Vec<CellChange> {
+    pub fn propagate_from(&self, cells: &mut Vec<Cell>, other_cells: Vec<Cell>) -> Vec<Cell> {
         let mut changes = vec![];
-        for cell in cells {
-            if let Some(cell) = map.get_cell(cell) {
-                changes.append(&mut self.propagate(
-                    &CellChange {
-                        position: cell.position,
-                        new_protos: cell.possibilities.clone(),
-                    },
-                    map,
-                ))
-            }
+        for cell in other_cells.iter() {
+            changes.append(&mut self.propagate(&cell, cells))
         }
 
         changes
     }
 
     // Choose a cell contained within this chunk and collapse it
-    pub fn collapse_next(&self, map: &mut Map) -> Option<Vec<CellChange>> {
-        let cell_position = self.select_lowest_entropy(map)?;
-        let cell = map.get_cell_mut(cell_position)?;
-        let change = cell.collapse(None)?;
-        Some(self.propagate(&change, map))
+    pub fn collapse_next(&self, cells: &mut Vec<Cell>) -> Option<Vec<Cell>> {
+        let cell_position = self.select_lowest_entropy(&cells)?;
+        let cell_index = self.get_index(cell_position);
+        let cell = cells.get_mut(cell_index)?;
+        cell.collapse(None)?;
+        Some(self.propagate(&cell.clone(), cells))
     }
 
     // No uncapped cells along the edge of the map. No uncapped cells along the top of the chunk
     // Prototypes marked `"constrain_to": "BOT"` should only appear in cells where y = 0
-    pub fn apply_custom_constraints(&self, map: &mut Map) -> Vec<CellChange> {
-        let map_size = map.size;
-        let chunk_top_y = min(self.position.y + self.size.y, map.size.y) - 1;
-
-        self.change_each_cell(map, |position, map| {
-            let cell = map.get_cell_mut(position)?;
-            let old_entropy = cell.possibilities.len();
-
-            if position.y == 0 {
+    pub fn apply_custom_constraints(&self, cells: &mut Vec<Cell>, map_size: Vector3i) {
+        let chunk_top_y = min(self.position.y + self.size.y, map_size.y) - 1;
+        for cell in cells.iter_mut() {
+            if cell.position.y == 0 {
                 Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::DOWN);
             } else {
                 Prototype::retain_not_constrained(&mut cell.possibilities, "BOT".into());
             }
 
-            if position.y == chunk_top_y {
+            if cell.position.y == chunk_top_y {
                 Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::UP);
             }
 
-            if position.x == 0 {
+            if cell.position.x == 0 {
                 Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::LEFT);
             }
 
-            if position.x == map_size.x - 1 {
+            if cell.position.x == map_size.x - 1 {
                 Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::RIGHT);
             }
 
-            if position.z == 0 {
+            if cell.position.z == 0 {
                 Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::FORWARD);
             }
 
-            if position.z == map_size.z - 1 {
+            if cell.position.z == map_size.z - 1 {
                 Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::BACK);
             }
-
-            if cell.possibilities.len() != old_entropy {
-                Some(vec![CellChange {
-                    position,
-                    new_protos: cell.possibilities.clone(),
-                }])
-            } else {
-                None
-            }
-        })
+        }
     }
 
     // Should not be necessary theoretically, but useful in many situations and as part of several
     //  strategies to maintain stability
-    pub fn propagate_all(&self, map: &mut Map) -> Vec<CellChange> {
-        self.change_each_cell(map, |position, map| {
-            let cell = map.get_cell(position)?;
-            let cell_change = CellChange {
-                position,
-                new_protos: cell.possibilities.clone(),
-            };
-            Some(self.propagate(&cell_change, map))
-        })
-    }
+    // pub fn propagate_all(&self, cells: Vec<Cell>) -> Vec<Cell> {
+    //     let mut changes = vec![];
+    //     for cell in cells.iter() {
+    //         changes.append(&mut self.propagate(cell, cells));
+    //     }
+
+    //     changes
+    // }
 
     // Propagate a given cell change into other cells within this chunk
-    fn propagate(&self, change: &CellChange, map: &mut Map) -> Vec<CellChange> {
-        let mut changes: Vec<CellChange> = vec![];
-        changes.push(change.clone());
+    fn propagate(&self, changed: &Cell, cells: &mut Vec<Cell>) -> Vec<Cell> {
+        let mut changes: Vec<Cell> = vec![];
+        changes.push(changed.clone());
 
-        for neighbor_position in self.get_cell_neighbors(change.position, 1).iter() {
-            if let Some(neighbor_cell) = map.get_cell_mut(*neighbor_position) {
-                if let Some(neighbor_change) = neighbor_cell.changes_from(change) {
-                    if neighbor_change.new_protos.len() == 0 {
-                        godot_print!(
-                            "overcollapsed {} while propagating {:?}",
-                            neighbor_position,
-                            change
-                        );
-                        continue;
+        for neighbor_position in self.get_cell_neighbors(changed.position, 1).iter() {
+            let neighbor_index = self.get_index(*neighbor_position);
+            let neighbor_cell = cells.get(neighbor_index);
+            match neighbor_cell {
+                Some(neighbor) => {
+                    if let Some(neighbor_changed) = neighbor.changes_from(changed) {
+                        cells[neighbor_index] = neighbor_changed.clone();
+                        changes.append(&mut self.propagate(&neighbor_changed, cells));
                     }
-
-                    neighbor_cell.change(&neighbor_change.new_protos);
-                    changes.append(&mut self.propagate(&neighbor_change.clone(), map));
+                }
+                None => {
+                    godot_print!("Failed to get cell in propagate: index {} (for position {}) is out of bounds {}",
+                        neighbor_index,
+                        neighbor_position,
+                        cells.len())
                 }
             }
         }
@@ -177,44 +154,32 @@ impl Chunk {
     // Select the "lowest entropy" cell and collapse it.
     // In reality, there are some rules in place to maintain stability that mean that this is often
     //  not the true lowest-entropy cell.
-    fn select_lowest_entropy(&self, map: &mut Map) -> Option<Vector3i> {
+    fn select_lowest_entropy(&self, cells: &Vec<Cell>) -> Option<Vector3i> {
         let mut lowest_entropy = usize::MAX;
         let mut lowest_entropy_cells = vec![];
 
-        let start = self.position;
-        let end = self.position + self.size;
-        for x in start.x..end.x {
-            for y in self.position.y..end.y {
-                for z in self.position.z..end.z {
-                    let position = Vector3i { x, y, z };
-                    let cell = map.get_cell(position);
-                    if let Some(cell) = cell {
-                        let mut entropy = cell.entropy();
-                        if entropy <= 1 || entropy > lowest_entropy {
-                            continue;
-                        }
+        for cell in cells.iter() {
+            let mut entropy = cell.entropy();
+            if entropy <= 1 || entropy > lowest_entropy {
+                continue;
+            }
 
-                        // TODO - apply custom entropy rules here
-                        // In the GDScript implementation, I added 1 along the bounding box of the
-                        // chunk, 2 at the top of the chunk, and added y to all cells' entropy
-                        if y == 0 {
-                            entropy += 100;
-                        } else {
-                            //entropy += y as usize;
-                        }
+            // TODO - apply custom entropy rules here
+            // In the GDScript implementation, I added 1 along the bounding box of the
+            // chunk, 2 at the top of the chunk, and added y to all cells' entropy
+            if cell.position.y == 0 {
+                entropy += 100;
+            }
 
-                        if entropy < lowest_entropy {
-                            lowest_entropy = entropy;
-                            lowest_entropy_cells = vec![position];
-                        } else if entropy == lowest_entropy {
-                            lowest_entropy_cells.push(position);
-                        } else {
-                            // TODO - this is reachable since we added custom entropy rules
-                            // need to think about what to do here.
-                            // unreachable!()
-                        }
-                    }
-                }
+            if entropy < lowest_entropy {
+                lowest_entropy = entropy;
+                lowest_entropy_cells = vec![cell.position];
+            } else if entropy == lowest_entropy {
+                lowest_entropy_cells.push(cell.position);
+            } else {
+                // TODO - this is reachable since we added custom entropy rules
+                // need to think about what to do here.
+                // unreachable!()
             }
         }
 
@@ -258,28 +223,6 @@ impl Chunk {
 
     // ITERATING UTILS
 
-    fn change_each_cell<F: Fn(Vector3i, &mut Map) -> Option<Vec<CellChange>>>(
-        &self,
-        map: &mut Map,
-        f: F,
-    ) -> Vec<CellChange> {
-        let mut changes = vec![];
-
-        let start = self.position;
-        let end = self.position + self.size;
-        for x in start.x..end.x {
-            for y in start.y..end.y {
-                for z in start.z..end.z {
-                    if let Some(mut changes_applied) = f(Vector3i { x, y, z }, map) {
-                        changes.append(&mut changes_applied)
-                    }
-                }
-            }
-        }
-
-        changes
-    }
-
     fn map_filter_cells<F: Fn(Vector3i) -> Option<Vector3i>>(&self, f: F) -> Vec<Vector3i> {
         let mut cells = vec![];
 
@@ -296,6 +239,13 @@ impl Chunk {
         }
 
         cells
+    }
+
+    // TODO: repeated in library.rs
+    fn get_index(&self, location: Vector3i) -> usize {
+        ((location.y - self.position.y) * (self.size.x * self.size.z)
+            + (location.x - self.position.x) * self.size.z
+            + (location.z - self.position.z)) as usize
     }
 }
 

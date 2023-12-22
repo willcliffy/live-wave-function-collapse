@@ -8,9 +8,6 @@ var cell_matrix: Array = []
 var changes_queued: Array = []
 
 func _ready():
-	$Area.mesh.size = driver.map_size
-	$Area.position = floor(Vector3(driver.map_size) / 2) - Vector3.ONE * 0.5
-
 	$CameraBase.position += Vector3(driver.map_size.x / 2, 0, driver.map_size.z / 2)
 	for y in range(driver.map_size.y):
 		cell_matrix.append([])

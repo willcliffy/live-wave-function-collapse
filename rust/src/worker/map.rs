@@ -1,8 +1,8 @@
 use godot::{builtin::Vector3i, engine::utilities::ceili, log::godot_print};
 
 use crate::models::{
-    collapser_state::CollapserState,
     driver_update::{CellChange, DriverUpdate},
+    manager::ManagerState,
     prototype::Prototype,
 };
 
@@ -10,10 +10,9 @@ use super::{cell::Cell, chunk::Chunk};
 
 pub struct Map {
     pub size: Vector3i,
+
     cells: Vec<Vec<Vec<Cell>>>,
     chunks: Vec<Chunk>,
-    chunk_overlap: i32,
-    current_chunk: usize,
     proto_data: Vec<Prototype>,
 }
 
@@ -27,21 +26,18 @@ impl Map {
             size,
             cells,
             chunks,
-            chunk_overlap,
-            current_chunk: 0,
             proto_data,
         }
     }
 
-    // called "down" from the collapser
+    // called "down" from the worker
 
     pub fn initialize(&mut self) -> Option<DriverUpdate> {
         self.prepare_next_chunk()
     }
 
-    pub fn collapse_next(&mut self) -> Option<DriverUpdate> {
-        let chunk = self.chunks.get(self.current_chunk)?;
-        let changed = chunk.clone().collapse_next(self);
+    pub fn collapse_next(&mut self, chunk: &Chunk) -> Option<DriverUpdate> {
+        let changed = chunk.collapse_next(self);
         return match changed {
             Some(changes) => {
                 // godot_print!("chunk collapsed next and got {:?} changes", changes.len());
@@ -89,7 +85,7 @@ impl Map {
     fn prepare_next_chunk(&mut self) -> Option<DriverUpdate> {
         if self.current_chunk >= self.chunks.len() {
             godot_print!("All chunks processed. Stopping.");
-            return Some(DriverUpdate::new_state(CollapserState::STOPPED));
+            return Some(DriverUpdate::new_state(ManagerState::STOPPED));
         }
 
         let next_chunk = self.chunks.get(self.current_chunk);
@@ -124,72 +120,4 @@ impl Map {
 
         Some(DriverUpdate::new_changes(changes))
     }
-}
-
-fn generate_cells(size: Vector3i, all_protos: &Vec<Prototype>) -> Vec<Vec<Vec<Cell>>> {
-    // let uncapped_x_min = Prototype::uncapped(all_protos, Vector3i::LEFT);
-    // let uncapped_x_max = Prototype::uncapped(all_protos, Vector3i::RIGHT);
-    // let uncapped_y_min = Prototype::uncapped(all_protos, Vector3i::DOWN);
-    // let uncapped_y_max = Prototype::uncapped(all_protos, Vector3i::UP);
-    // let uncapped_z_min = Prototype::uncapped(all_protos, Vector3i::FORWARD);
-    // let uncapped_z_max = Prototype::uncapped(all_protos, Vector3i::BACK);
-    // let not_bot = Prototype::not_constrained(all_protos, "BOT".into());
-
-    let mut cells = vec![];
-    for y in 0..size.y {
-        let mut plane = vec![];
-        for x in 0..size.x {
-            let mut row = vec![];
-            for z in 0..size.z {
-                let mut cell_protos = all_protos.clone();
-
-                if x == 0 {
-                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::LEFT);
-                } else if x == size.x - 1 {
-                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::RIGHT);
-                }
-
-                if y == 0 {
-                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::DOWN);
-                } else {
-                    Prototype::retain_not_constrained(&mut cell_protos, "BOT".into());
-                    if y == size.y - 1 {
-                        Prototype::retain_uncapped(&mut cell_protos, Vector3i::UP);
-                    }
-                }
-
-                if z == 0 {
-                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::FORWARD);
-                } else if z == size.z - 1 {
-                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::BACK);
-                }
-
-                let cell = Cell::new(Vector3i { x, y, z }, cell_protos);
-                row.push(cell);
-            }
-            plane.push(row);
-        }
-        cells.push(plane);
-    }
-    cells
-}
-
-fn generate_chunks(size: Vector3i, chunk_size: Vector3i, chunk_overlap: i32) -> Vec<Chunk> {
-    let num_x = ceili((size.x / (chunk_size.x - chunk_overlap)) as f64) as i32;
-    let num_y = ceili((size.y / (chunk_size.y - chunk_overlap)) as f64) as i32;
-    let num_z = ceili((size.z / (chunk_size.z - chunk_overlap)) as f64) as i32;
-    let position_factor = chunk_size - Vector3i::ONE * chunk_overlap;
-
-    let mut chunks = vec![];
-    for y in 0..num_y {
-        for x in 0..num_x {
-            for z in 0..num_z {
-                let position = position_factor * Vector3i { x, y, z };
-                let new_chunk = Chunk::new(position, chunk_size);
-                chunks.push(new_chunk);
-            }
-        }
-    }
-
-    chunks
 }
