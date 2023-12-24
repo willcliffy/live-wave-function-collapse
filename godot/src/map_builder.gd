@@ -7,6 +7,7 @@ var cell_matrix: Array = []
 
 var changes_queued: Array = []
 
+
 func _ready():
 	$CameraBase.position += Vector3(driver.map_size.x / 2, 0, driver.map_size.z / 2)
 	for y in range(driver.map_size.y):

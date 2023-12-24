@@ -6,7 +6,7 @@ use godot::prelude::*;
 #[derive(Property, PartialEq, Clone, Copy, Debug)]
 pub enum ManagerState {
     IDLE = 1,
-    PROCESSING = 2,
+    WORKING = 2,
     STOPPED = 3,
 }
 
@@ -34,4 +34,10 @@ impl ManagerCommand {
             payload: None,
         }
     }
+}
+
+pub enum GetNextChunkResponse {
+    NoChunksLeft,
+    NoChunksReady,
+    ChunkReady(usize),
 }

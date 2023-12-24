@@ -2,60 +2,60 @@ use godot::prelude::*;
 
 use crate::models::{
     phone::Phone,
-    worker::{WorkerCommand, WorkerCommandType, WorkerUpdate},
+    worker::{WorkerCommand, WorkerCommandType, WorkerUpdate, WorkerUpdateStatus},
 };
 
-use super::{cell::Cell, chunk::Chunk};
+use super::chunk::Chunk;
 
 pub struct Worker {
     phone: Phone<WorkerUpdate, WorkerCommand>,
+    index: usize,
     chunk: Chunk,
 }
 
 impl Worker {
-    pub fn new(phone: Phone<WorkerUpdate, WorkerCommand>, chunk: Chunk) -> Self {
-        Self { phone, chunk }
+    pub fn new(phone: Phone<WorkerUpdate, WorkerCommand>, index: usize, chunk: Chunk) -> Self {
+        Self {
+            phone,
+            index,
+            chunk,
+        }
     }
 
     pub fn run(&mut self) {
         loop {
-            match self.phone.wait() {
-                Ok(mut command) => match self.on_command_received(&mut command) {
-                    Ok(result) => {
-                        godot_print!("[W] command processed: {:?}", result);
+            match self.tick() {
+                Ok(stop) => {
+                    if stop {
+                        godot_print!("[W{}] Stopping normally", self.index);
+                        break;
                     }
-                    Err(e) => {
-                        godot_print!("[W] err processing command: {:?}", e);
-                    }
-                },
+                }
                 Err(e) => {
-                    godot_error!("[W] Disconnected: {}. Exiting.", e);
+                    let update = WorkerUpdate::new(self.index, WorkerUpdateStatus::Error(e));
+                    if let Err(e) = self.phone.send(update) {
+                        godot_error!("[W] Failed to send error update: {}", e)
+                    }
                     break;
                 }
-            };
+            }
         }
     }
 
-    fn on_command_received(&mut self, command: &mut WorkerCommand) -> Result<Vec<Cell>, String> {
-        godot_print!("[W] Message received: {:?}", command.command);
+    fn tick(&mut self) -> anyhow::Result<bool> {
+        let command = &mut self.phone.wait()?;
         match command.command {
-            WorkerCommandType::NOOP => Ok(vec![]),
-            WorkerCommandType::COLLAPSE => self.collapse_next(&mut command.cells),
-        }
-    }
+            WorkerCommandType::NOOP => Ok(false),
+            WorkerCommandType::STOP => Ok(true),
+            WorkerCommandType::COLLAPSE => {
+                let (start, end) = self.chunk.bounds();
+                let mut range = command.map.check_out_range(start, end)?;
+                let changes = self.chunk.collapse_next(&mut range)?;
+                command.map.check_in_range(&mut range)?;
 
-    fn collapse_next(&mut self, cells: &mut Vec<Cell>) -> Result<Vec<Cell>, String> {
-        self.chunk.collapse_next(cells);
-        let update = WorkerUpdate::new(false, vec![]);
-        self.post_changes(update);
-        Ok(vec![])
-    }
-
-    // HELPERS
-
-    fn post_changes(&mut self, update: WorkerUpdate) {
-        if let Err(e) = self.phone.send(update) {
-            godot_print!("[W] Failed to post changes! {}", e)
+                self.phone.send(WorkerUpdate::new(self.index, changes))?;
+                Ok(false)
+            }
         }
     }
 }

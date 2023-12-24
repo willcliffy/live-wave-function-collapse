@@ -13,6 +13,9 @@ func _ready():
 
 
 func change(new_possibilities: Array):
+	if len(new_possibilities) == len(_possibilities):
+		return # TODO - maybe have a visual indicator here anyways :think:
+
 	if len(new_possibilities) == 1:
 		collapse(new_possibilities[0])
 		return

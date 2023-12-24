@@ -62,16 +62,16 @@ sun_base_enegry = 1.0
 moon_base_enegry = 1.0
 
 [node name="Sun" type="DirectionalLight3D" parent="Environment"]
-transform = Transform3D(0.920997, 0, -0.389571, 0.194785, -0.866025, 0.460498, -0.337378, -0.5, -0.797606, 0, 0, 0)
+transform = Transform3D(0.920997, 0, -0.38957, 0.194785, -0.866025, 0.460498, -0.337378, -0.5, -0.797606, 0, 0, 0)
 rotation_order = 4
+
+[node name="axes" parent="Environment" instance=ExtResource("2_onn7h")]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
 
 [node name="Moon" type="DirectionalLight3D" parent="Environment"]
 transform = Transform3D(0.903038, 0, 0.42956, 0.274164, 0.769834, -0.576359, -0.33069, 0.638244, 0.69519, 0, 0, 0)
 rotation_order = 4
 light_energy = 0.0
-
-[node name="axes" parent="." instance=ExtResource("2_onn7h")]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
 
 [node name="CameraBase" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 2.08165e-12, 2.08165e-12, 2.08165e-12)

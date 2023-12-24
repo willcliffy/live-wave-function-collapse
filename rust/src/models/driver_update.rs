@@ -1,12 +1,8 @@
 use godot::prelude::*;
 
-use super::{manager::ManagerState, prototype::Prototype};
+use crate::worker::cell::Cell;
 
-#[derive(Debug, Clone)]
-pub struct CellChange {
-    pub position: Vector3i,
-    pub new_protos: Vec<Prototype>,
-}
+use super::{manager::ManagerState, prototype::Prototype};
 
 #[derive(ToGodot, FromGodot, GodotConvert, Debug)]
 pub struct CellChangeGodot {
@@ -40,13 +36,13 @@ impl ManagerUpdate {
         ManagerUpdate::new(Some(new_state), None)
     }
 
-    pub fn new_changes(changes: Vec<CellChange>) -> Self {
+    pub fn new_changes(changes: Vec<Cell>) -> Self {
         ManagerUpdate::new(
             None,
             Some(
                 changes
                     .iter()
-                    .map(|c| CellChangeGodot::from_internal(c.position, c.new_protos.clone()))
+                    .map(|c| CellChangeGodot::from_internal(c.position, c.possibilities.clone()))
                     .collect(),
             ),
         )

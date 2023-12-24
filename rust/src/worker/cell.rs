@@ -1,9 +1,7 @@
 use godot::prelude::*;
 use rand::prelude::*;
 
-use crate::models::{driver_update::CellChange, prototype::Prototype};
-
-use super::library::Book;
+use crate::models::{library::Book, prototype::Prototype};
 
 #[derive(Clone, Debug)]
 pub struct Cell {
@@ -40,6 +38,15 @@ impl Book for Cell {
         self.locked = true;
         true
     }
+
+    fn check_in(&mut self) -> bool {
+        if !self.is_checked_out() {
+            return false;
+        }
+
+        self.locked = false;
+        true
+    }
 }
 
 impl Cell {
@@ -47,7 +54,7 @@ impl Cell {
         Self {
             position,
             possibilities,
-            version: "".into(),
+            version: "base".into(),
             locked: false,
         }
     }
@@ -71,44 +78,19 @@ impl Cell {
         None
     }
 
-    pub fn change(&mut self, prototypes: &Vec<Prototype>) -> Option<CellChange> {
-        let old_length = self.possibilities.len();
+    pub fn collapsed(&self, prototype: Option<Prototype>) -> Option<Cell> {
+        let proto = match prototype {
+            Some(proto) => proto,
+            None => {
+                let index = self.choose_weighted()?;
+                let proto = self.possibilities.get(index)?;
+                proto.clone()
+            }
+        };
 
-        self.possibilities = prototypes.clone();
-
-        if self.possibilities.len() != old_length {
-            return Some(CellChange {
-                position: self.position,
-                new_protos: self.possibilities.clone(),
-            });
-        }
-
-        None
-    }
-
-    pub fn collapse(&mut self, prototype: Option<Prototype>) -> Option<CellChange> {
-        let old_length = self.possibilities.len();
-
-        if let Some(proto) = prototype {
-            self.possibilities = vec![proto];
-        } else if let Some(selected) = self.choose_weighted() {
-            self.possibilities = vec![selected];
-        } else {
-            godot_print!(
-                "Tried to collapse but already overcollapsed! {}",
-                self.position
-            );
-            self.possibilities = vec![];
-        }
-
-        if self.possibilities.len() != old_length {
-            return Some(CellChange {
-                position: self.position,
-                new_protos: self.possibilities.clone(), // TODO - can we avoid cloning here?
-            });
-        }
-
-        None
+        let mut collapsed = self.clone();
+        collapsed.change(&vec![proto]);
+        Some(collapsed)
     }
 
     pub fn entropy(&self) -> usize {
@@ -119,13 +101,21 @@ impl Cell {
         self.possibilities.len() <= 1
     }
 
-    fn choose_weighted(&mut self) -> Option<Prototype> {
+    // &mut self
+
+    pub fn change(&mut self, prototypes: &Vec<Prototype>) -> bool {
+        let old_length = self.possibilities.len();
+        self.possibilities = prototypes.clone();
+        self.possibilities.len() != old_length
+    }
+
+    fn choose_weighted(&self) -> Option<usize> {
         let sum_of_weights = self.possibilities.iter().fold(0.0, |l, p| l + p.weight);
         let mut selected_weight = rand::thread_rng().gen_range(0.0..sum_of_weights);
-        for prototype in self.possibilities.iter() {
-            selected_weight -= prototype.weight;
+        for i in 0..self.possibilities.len() {
+            selected_weight -= self.possibilities[i].weight;
             if selected_weight <= 0.0 {
-                return Some(prototype.clone());
+                return Some(i);
             }
         }
 
@@ -133,7 +123,6 @@ impl Cell {
             "selected a weight greater than sum_of_weights! sow: {}",
             sum_of_weights
         );
-
-        self.possibilities.last().cloned()
+        None
     }
 }

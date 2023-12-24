@@ -1,8 +1,7 @@
 pub(crate) mod cell;
 pub(crate) mod chunk;
-pub(crate) mod library;
 pub(crate) mod manager;
-// pub(crate) mod map;
 pub(crate) mod worker;
+pub(crate) mod worker_pool;
 
 mod chunk_test;

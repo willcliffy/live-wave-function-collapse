@@ -3,88 +3,154 @@ use std::cmp::min;
 use godot::prelude::*;
 use rand::Rng;
 
-use crate::models::prototype::Prototype;
+use crate::models::{library::Range, prototype::Prototype, worker::WorkerUpdateStatus};
 
 use super::cell::Cell;
 
 #[derive(Clone, Copy)]
 pub struct Chunk {
-    position: Vector3i,
-    size: Vector3i,
+    pub position: Vector3i,
+    pub size: Vector3i,
+
+    pub active: bool,
+    pub collapsed: bool,
 }
 
 impl Chunk {
     pub fn new(position: Vector3i, size: Vector3i) -> Self {
-        Self { position, size }
+        Self {
+            position,
+            size,
+            active: false,
+            collapsed: false,
+        }
     }
 
     pub fn bounds(&self) -> (Vector3i, Vector3i) {
         (self.position, self.position + self.size)
     }
 
-    // Used to determine which cells to reset in the initialize chunk phase
-    pub fn get_overlapping(&self, other: &Chunk) -> Vec<Vector3i> {
-        let self_end = self.position + self.size;
-        let other_end = other.position + other.size;
+    pub fn is_overlapping(&self, other: &Chunk) -> bool {
+        let (self_start, self_end) = self.bounds();
+        let (other_start, other_end) = other.bounds();
+        let overlap_x = self_end.x >= other_start.x && self_start.x <= other_end.x;
+        let overlap_y = self_end.y >= other_start.y && self_start.y <= other_end.y;
+        let overlap_z = self_end.z >= other_start.z && self_start.z <= other_end.z;
 
-        let start_x = self.position.x.max(other.position.x);
-        let end_x = self_end.x.min(other_end.x);
+        overlap_x && overlap_y && overlap_z
+    }
 
-        let start_y = self.position.y.max(other.position.y);
-        let end_y = self_end.y.min(other_end.y);
+    // Used to determine which cells to propagate changes in from in the initialize chunk phase
+    pub fn get_neighboring_cells(&self, other: &Chunk, n: i32) -> Vec<Vector3i> {
+        let mut neighbors = vec![];
 
-        let start_z = self.position.z.max(other.position.z);
-        let end_z = self_end.z.min(other_end.z);
-
-        let mut overlap: Vec<Vector3i> = Vec::new();
-        for x in start_x..end_x {
-            for y in start_y..end_y {
-                for z in start_z..end_z {
-                    overlap.push(Vector3i { x, y, z })
+        let (start, end) = other.bounds();
+        for x in start.x..end.x {
+            for y in start.y..end.y {
+                for z in start.z..end.z {
+                    let position = Vector3i { x, y, z };
+                    if !self.contains(position) && self.get_cell_neighbors(position, n).len() > 0 {
+                        neighbors.push(position)
+                    }
                 }
             }
         }
 
-        overlap
+        neighbors
     }
 
-    // Used to determine which cells to propagate changes in from in the initialize chunk phase
-    pub fn get_neighbors(&self, other: &Chunk, n: i32) -> Vec<Vector3i> {
-        other.map_filter_cells(|position| {
-            if self.contains(position) {
-                None
-            } else if self.get_cell_neighbors(position, n).len() > 0 {
-                Some(position)
-            } else {
-                None
+    pub fn reset_cells(
+        &self,
+        range: &mut Range<Cell>,
+        proto_data: &Vec<Prototype>,
+        map_size: Vector3i,
+    ) -> anyhow::Result<Vec<Cell>> {
+        for cell in &mut range.books {
+            let mut cell_protos = proto_data.clone();
+
+            if cell.position.x == 0 {
+                Prototype::retain_uncapped(&mut cell_protos, Vector3i::LEFT);
+            } else if cell.position.x == map_size.x - 1 {
+                Prototype::retain_uncapped(&mut cell_protos, Vector3i::RIGHT);
             }
-        })
+
+            if cell.position.y == 0 {
+                Prototype::retain_uncapped(&mut cell_protos, Vector3i::DOWN);
+            } else {
+                Prototype::retain_not_constrained(&mut cell_protos, "BOT".into());
+                if cell.position.y == map_size.y - 1 {
+                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::UP);
+                }
+            }
+
+            if cell.position.z == 0 {
+                Prototype::retain_uncapped(&mut cell_protos, Vector3i::FORWARD);
+            } else if cell.position.z == map_size.z - 1 {
+                Prototype::retain_uncapped(&mut cell_protos, Vector3i::BACK);
+            }
+            cell.change(&cell_protos);
+        }
+
+        let cells_clone = range.books.clone();
+        Ok(cells_clone)
     }
 
     // Used in conjunction with get_neighbors to pull in changes from neighboring chunks
-    pub fn propagate_from(&self, cells: &mut Vec<Cell>, other_cells: Vec<Cell>) -> Vec<Cell> {
+    pub fn propagate_cells(
+        &self,
+        range: &mut Range<Cell>,
+        others: &Vec<Cell>,
+    ) -> anyhow::Result<Vec<Cell>> {
         let mut changes = vec![];
-        for cell in other_cells.iter() {
-            changes.append(&mut self.propagate(&cell, cells))
+        for cell in others {
+            changes.append(&mut self.propagate(cell, range));
         }
 
-        changes
+        Ok(changes)
     }
 
     // Choose a cell contained within this chunk and collapse it
-    pub fn collapse_next(&self, cells: &mut Vec<Cell>) -> Option<Vec<Cell>> {
-        let cell_position = self.select_lowest_entropy(&cells)?;
-        let cell_index = self.get_index(cell_position);
-        let cell = cells.get_mut(cell_index)?;
-        cell.collapse(None)?;
-        Some(self.propagate(&cell.clone(), cells))
+    pub fn collapse_next(&self, range: &mut Range<Cell>) -> anyhow::Result<WorkerUpdateStatus> {
+        let result = match self.select_lowest_entropy(&range.books) {
+            Some(cell_position) => {
+                let cell_index = range.index(cell_position, self.position);
+                if cell_position != range.books[cell_index].position {
+                    godot_print!(
+                        "[C] WARNING: Cell position mismatch - check index implementation {} (index {}) reported position {}",
+                        cell_position,
+                        cell_index,
+                        range.books[cell_index].position,
+                    );
+                }
+
+                match self.collapse_cell(range, cell_index) {
+                    Some(changes) => Ok(WorkerUpdateStatus::Ok(changes)),
+                    None => Err(anyhow::anyhow!("Failed to collapse next!")),
+                }
+            }
+            None => Ok(WorkerUpdateStatus::Done),
+        };
+
+        result
+    }
+
+    fn collapse_cell(&self, range: &mut Range<Cell>, collapse_index: usize) -> Option<Vec<Cell>> {
+        let cell = range.books.get(collapse_index)?;
+        let collapsed = cell.collapsed(None)?;
+        let collapsed_clone = collapsed.clone();
+        range.books[collapse_index] = collapsed;
+        Some(self.propagate(&collapsed_clone, range))
     }
 
     // No uncapped cells along the edge of the map. No uncapped cells along the top of the chunk
     // Prototypes marked `"constrain_to": "BOT"` should only appear in cells where y = 0
-    pub fn apply_custom_constraints(&self, cells: &mut Vec<Cell>, map_size: Vector3i) {
+    pub fn apply_custom_constraints(
+        &self,
+        range: &mut Range<Cell>,
+        map_size: Vector3i,
+    ) -> anyhow::Result<()> {
         let chunk_top_y = min(self.position.y + self.size.y, map_size.y) - 1;
-        for cell in cells.iter_mut() {
+        for cell in range.books.iter_mut() {
             if cell.position.y == 0 {
                 Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::DOWN);
             } else {
@@ -111,39 +177,41 @@ impl Chunk {
                 Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::BACK);
             }
         }
+
+        Ok(())
     }
 
     // Should not be necessary theoretically, but useful in many situations and as part of several
     //  strategies to maintain stability
-    // pub fn propagate_all(&self, cells: Vec<Cell>) -> Vec<Cell> {
-    //     let mut changes = vec![];
-    //     for cell in cells.iter() {
-    //         changes.append(&mut self.propagate(cell, cells));
-    //     }
+    pub fn propagate_all(&self, range: &mut Range<Cell>) -> anyhow::Result<Vec<Cell>> {
+        let mut changes = vec![];
+        for i in 0..range.books.len() {
+            changes.append(&mut self.propagate(&range.books[i].clone(), range));
+        }
 
-    //     changes
-    // }
+        Ok(changes)
+    }
 
     // Propagate a given cell change into other cells within this chunk
-    fn propagate(&self, changed: &Cell, cells: &mut Vec<Cell>) -> Vec<Cell> {
+    fn propagate(&self, changed: &Cell, range: &mut Range<Cell>) -> Vec<Cell> {
         let mut changes: Vec<Cell> = vec![];
         changes.push(changed.clone());
 
         for neighbor_position in self.get_cell_neighbors(changed.position, 1).iter() {
-            let neighbor_index = self.get_index(*neighbor_position);
-            let neighbor_cell = cells.get(neighbor_index);
+            let neighbor_index = range.index(*neighbor_position, self.position);
+            let neighbor_cell = range.books.get(neighbor_index);
             match neighbor_cell {
+                None => continue,
                 Some(neighbor) => {
                     if let Some(neighbor_changed) = neighbor.changes_from(changed) {
-                        cells[neighbor_index] = neighbor_changed.clone();
-                        changes.append(&mut self.propagate(&neighbor_changed, cells));
+                        if neighbor_changed.possibilities.len() == 0 {
+                            // godot_print!("[C] skipping overcollapsed")
+                        } else {
+                            let neighbor_changed_clone = neighbor_changed.clone();
+                            range.books[neighbor_index] = neighbor_changed;
+                            changes.append(&mut self.propagate(&neighbor_changed_clone, range))
+                        }
                     }
-                }
-                None => {
-                    godot_print!("Failed to get cell in propagate: index {} (for position {}) is out of bounds {}",
-                        neighbor_index,
-                        neighbor_position,
-                        cells.len())
                 }
             }
         }
@@ -158,7 +226,7 @@ impl Chunk {
         let mut lowest_entropy = usize::MAX;
         let mut lowest_entropy_cells = vec![];
 
-        for cell in cells.iter() {
+        for cell in cells {
             let mut entropy = cell.entropy();
             if entropy <= 1 || entropy > lowest_entropy {
                 continue;
@@ -219,33 +287,6 @@ impl Chunk {
         }
 
         neighbors
-    }
-
-    // ITERATING UTILS
-
-    fn map_filter_cells<F: Fn(Vector3i) -> Option<Vector3i>>(&self, f: F) -> Vec<Vector3i> {
-        let mut cells = vec![];
-
-        let start = self.position;
-        let end = self.position + self.size;
-        for x in start.x..end.x {
-            for y in start.y..end.y {
-                for z in start.z..end.z {
-                    if let Some(position) = f(Vector3i { x, y, z }) {
-                        cells.push(position);
-                    }
-                }
-            }
-        }
-
-        cells
-    }
-
-    // TODO: repeated in library.rs
-    fn get_index(&self, location: Vector3i) -> usize {
-        ((location.y - self.position.y) * (self.size.x * self.size.z)
-            + (location.x - self.position.x) * self.size.z
-            + (location.z - self.position.z)) as usize
     }
 }
 
