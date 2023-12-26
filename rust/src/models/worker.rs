@@ -33,6 +33,7 @@ impl WorkerCommand {
 pub enum WorkerUpdateStatus {
     Ok(Vec<Cell>),
     Done,
+    Reset(anyhow::Error),
     Error(anyhow::Error),
 }
 

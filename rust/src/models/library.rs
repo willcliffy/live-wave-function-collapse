@@ -144,9 +144,9 @@ impl<T: Book + Clone> Library3D<T> {
         range_end.y = min(range_end.y, self.size.y);
         range_end.z = min(range_end.z, self.size.z);
 
-        for y in start.y..end.y {
-            for x in start.x..end.x {
-                for z in start.z..end.z {
+        for y in start.y..range_end.y {
+            for x in start.x..range_end.x {
+                for z in start.z..range_end.z {
                     let location = Vector3i { x, y, z };
                     let index = self.get_index(location);
 

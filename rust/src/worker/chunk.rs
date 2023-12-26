@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::cmp::{max, min};
 
 use godot::prelude::*;
 use rand::Rng;
@@ -41,10 +41,24 @@ impl Chunk {
     }
 
     // Used to determine which cells to propagate changes in from in the initialize chunk phase
-    pub fn get_neighboring_cells(&self, other: &Chunk, n: i32) -> Vec<Vector3i> {
+    pub fn get_neighboring_cells(
+        &self,
+        other: &Chunk,
+        map_size: Vector3i,
+        n: i32,
+    ) -> Vec<Vector3i> {
         let mut neighbors = vec![];
 
-        let (start, end) = other.bounds();
+        let (mut start, mut end) = other.bounds();
+
+        start.x = max(start.x, 0);
+        start.y = max(start.y, 0);
+        start.z = max(start.z, 0);
+
+        end.x = min(end.x, map_size.x);
+        end.y = min(end.y, map_size.y);
+        end.z = min(end.z, map_size.z);
+
         for x in start.x..end.x {
             for y in start.y..end.y {
                 for z in start.z..end.z {
@@ -103,7 +117,8 @@ impl Chunk {
     ) -> anyhow::Result<Vec<Cell>> {
         let mut changes = vec![];
         for cell in others {
-            changes.append(&mut self.propagate(cell, range));
+            let inner_changes = &mut self.propagate(cell, range)?;
+            changes.append(inner_changes);
         }
 
         Ok(changes)
@@ -124,7 +139,10 @@ impl Chunk {
                 }
 
                 match self.collapse_cell(range, cell_index) {
-                    Some(changes) => Ok(WorkerUpdateStatus::Ok(changes)),
+                    Some(cell) => {
+                        let changes = self.propagate(&cell, range)?;
+                        Ok(WorkerUpdateStatus::Ok(changes))
+                    }
                     None => Err(anyhow::anyhow!("Failed to collapse next!")),
                 }
             }
@@ -134,12 +152,12 @@ impl Chunk {
         result
     }
 
-    fn collapse_cell(&self, range: &mut Range<Cell>, collapse_index: usize) -> Option<Vec<Cell>> {
+    fn collapse_cell(&self, range: &mut Range<Cell>, collapse_index: usize) -> Option<Cell> {
         let cell = range.books.get(collapse_index)?;
         let collapsed = cell.collapsed(None)?;
         let collapsed_clone = collapsed.clone();
         range.books[collapse_index] = collapsed;
-        Some(self.propagate(&collapsed_clone, range))
+        Some(collapsed_clone)
     }
 
     // No uncapped cells along the edge of the map. No uncapped cells along the top of the chunk
@@ -186,14 +204,15 @@ impl Chunk {
     pub fn propagate_all(&self, range: &mut Range<Cell>) -> anyhow::Result<Vec<Cell>> {
         let mut changes = vec![];
         for i in 0..range.books.len() {
-            changes.append(&mut self.propagate(&range.books[i].clone(), range));
+            let inner_changes = &mut self.propagate(&range.books[i].clone(), range)?;
+            changes.append(inner_changes);
         }
 
         Ok(changes)
     }
 
     // Propagate a given cell change into other cells within this chunk
-    fn propagate(&self, changed: &Cell, range: &mut Range<Cell>) -> Vec<Cell> {
+    fn propagate(&self, changed: &Cell, range: &mut Range<Cell>) -> anyhow::Result<Vec<Cell>> {
         let mut changes: Vec<Cell> = vec![];
         changes.push(changed.clone());
 
@@ -205,18 +224,20 @@ impl Chunk {
                 Some(neighbor) => {
                     if let Some(neighbor_changed) = neighbor.changes_from(changed) {
                         if neighbor_changed.possibilities.len() == 0 {
-                            // godot_print!("[C] skipping overcollapsed")
+                            return Err(anyhow::anyhow!("Overcollapsed"));
                         } else {
                             let neighbor_changed_clone = neighbor_changed.clone();
                             range.books[neighbor_index] = neighbor_changed;
-                            changes.append(&mut self.propagate(&neighbor_changed_clone, range))
+                            let inner_changes =
+                                &mut self.propagate(&neighbor_changed_clone, range)?;
+                            changes.append(inner_changes);
                         }
                     }
                 }
             }
         }
 
-        changes
+        Ok(changes)
     }
 
     // Select the "lowest entropy" cell and collapse it.

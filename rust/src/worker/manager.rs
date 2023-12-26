@@ -10,7 +10,7 @@ use crate::models::{
 
 use super::worker_pool::WorkerPool;
 
-const NUM_THREADS: usize = 1;
+const NUM_THREADS: usize = 24;
 
 pub struct Manager {
     state: ManagerState,

@@ -16,7 +16,7 @@ shader_parameter/sunset_top_color = Color(0.7, 0.75, 1, 1)
 shader_parameter/sunset_bottom_color = Color(1, 0.5, 0.7, 1)
 shader_parameter/night_top_color = Color(0.02, 0, 0.04, 1)
 shader_parameter/night_bottom_color = Color(0.1, 0, 0.2, 1)
-shader_parameter/horizon_color = Color(0, 0.7, 0.8, 1)
+shader_parameter/horizon_color = Color(0.156863, 0.0705882, 0, 1)
 shader_parameter/horizon_blur = 0.05
 shader_parameter/sun_color = Color(10, 8, 1, 1)
 shader_parameter/sun_sunset_color = Color(10, 0, 0, 1)
@@ -57,21 +57,20 @@ script = ExtResource("1_lqyqi")
 [node name="Environment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_fqcsp")
 script = ExtResource("3_6c7db")
-day_time = 16.0
+day_time = 8.0
 sun_base_enegry = 1.0
 moon_base_enegry = 1.0
 
 [node name="Sun" type="DirectionalLight3D" parent="Environment"]
-transform = Transform3D(0.920997, 0, -0.38957, 0.194785, -0.866025, 0.460498, -0.337378, -0.5, -0.797606, 0, 0, 0)
+transform = Transform3D(0.920809, 0, -0.390014, 0.195007, 0.866025, 0.460404, 0.337762, -0.5, 0.797443, 0, 0, 0)
 rotation_order = 4
 
 [node name="axes" parent="Environment" instance=ExtResource("2_onn7h")]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
 
 [node name="Moon" type="DirectionalLight3D" parent="Environment"]
-transform = Transform3D(0.903038, 0, 0.42956, 0.274164, 0.769834, -0.576359, -0.33069, 0.638244, 0.69519, 0, 0, 0)
+transform = Transform3D(0.965201, 0, -0.261509, 0.254038, 0.237327, 0.937625, 0.0620631, -0.97143, 0.229068, 0, 0, 0)
 rotation_order = 4
-light_energy = 0.0
 
 [node name="CameraBase" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 2.08165e-12, 2.08165e-12, 2.08165e-12)

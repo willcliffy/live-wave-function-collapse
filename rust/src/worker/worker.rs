@@ -32,10 +32,9 @@ impl Worker {
                     }
                 }
                 Err(e) => {
+                    godot_print!("[W{}] sending error update: {}", self.index, e);
                     let update = WorkerUpdate::new(self.index, WorkerUpdateStatus::Error(e));
-                    if let Err(e) = self.phone.send(update) {
-                        godot_error!("[W] Failed to send error update: {}", e)
-                    }
+                    let _ = self.phone.send(update);
                     break;
                 }
             }
@@ -43,19 +42,30 @@ impl Worker {
     }
 
     fn tick(&mut self) -> anyhow::Result<bool> {
+        let mut stop = false;
         let command = &mut self.phone.wait()?;
         match command.command {
-            WorkerCommandType::NOOP => Ok(false),
-            WorkerCommandType::STOP => Ok(true),
+            WorkerCommandType::NOOP => (),
+            WorkerCommandType::STOP => stop = true,
             WorkerCommandType::COLLAPSE => {
                 let (start, end) = self.chunk.bounds();
                 let mut range = command.map.check_out_range(start, end)?;
-                let changes = self.chunk.collapse_next(&mut range)?;
+                let update = match self.chunk.collapse_next(&mut range) {
+                    Ok(changes) => WorkerUpdate::new(self.index, changes),
+                    Err(e) => WorkerUpdate::new(self.index, WorkerUpdateStatus::Reset(e)),
+                };
+
                 command.map.check_in_range(&mut range)?;
 
-                self.phone.send(WorkerUpdate::new(self.index, changes))?;
-                Ok(false)
+                match update.status {
+                    WorkerUpdateStatus::Done => stop = true,
+                    WorkerUpdateStatus::Error(_) => stop = true,
+                    _ => (),
+                }
+
+                self.phone.send(update)?;
             }
         }
+        Ok(stop)
     }
 }
