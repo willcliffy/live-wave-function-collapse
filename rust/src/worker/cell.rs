@@ -119,7 +119,7 @@ impl Cell {
             }
         }
 
-        godot_error!(
+        godot_print!(
             "selected a weight greater than sum_of_weights! sow: {}",
             sum_of_weights
         );

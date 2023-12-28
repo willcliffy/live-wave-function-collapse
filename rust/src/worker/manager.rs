@@ -10,7 +10,7 @@ use crate::models::{
 
 use super::worker_pool::WorkerPool;
 
-const NUM_THREADS: usize = 24;
+const NUM_THREADS: usize = 4;
 
 pub struct Manager {
     state: ManagerState,
@@ -32,7 +32,7 @@ impl Manager {
         let pool = WorkerPool::new(NUM_THREADS, map_size, chunk_size, chunk_overlap);
 
         Self {
-            state: ManagerState::IDLE,
+            state: ManagerState::Idle,
             phone,
             pool,
         }
@@ -43,26 +43,26 @@ impl Manager {
         loop {
             match self.state {
                 // When stopped, break. TODO - tell worker threads that we can stop, wait on them.
-                ManagerState::STOPPED => {
+                ManagerState::Stopped => {
                     godot_print!("[M] exiting normally");
                     break;
                 }
 
                 // When idle, block until a command is received
-                ManagerState::IDLE => match self.phone.wait() {
+                ManagerState::Idle => match self.phone.wait() {
                     Ok(command) => self.on_command_received(command),
-                    Err(_) => self.set_state(ManagerState::STOPPED),
+                    Err(_) => self.set_state(ManagerState::Stopped),
                 },
 
                 // When working, check if a command has been received, but do not block
-                ManagerState::WORKING => match self.phone.check() {
+                ManagerState::Working => match self.phone.check() {
                     Ok(command) => self.on_command_received(command),
                     Err(e) => match e {
                         TryRecvError::Empty => match self.pool.manage_workers() {
                             Some(update) => self.report(update),
                             None => continue,
                         },
-                        TryRecvError::Disconnected => self.set_state(ManagerState::STOPPED),
+                        TryRecvError::Disconnected => self.set_state(ManagerState::Stopped),
                     },
                 },
             }
@@ -72,10 +72,10 @@ impl Manager {
     fn on_command_received(&mut self, command: ManagerCommand) {
         godot_print!("[M] Command received: {:?}", command);
         match command.command {
-            ManagerCommandType::NOOP => godot_print!("[M] noop!"),
-            ManagerCommandType::START => self.set_state(ManagerState::WORKING),
-            ManagerCommandType::PAUSE => self.set_state(ManagerState::IDLE),
-            ManagerCommandType::STOP => self.set_state(ManagerState::STOPPED),
+            ManagerCommandType::NoOp => godot_print!("[M] noop!"),
+            ManagerCommandType::Start => self.set_state(ManagerState::Working),
+            ManagerCommandType::Pause => self.set_state(ManagerState::Idle),
+            ManagerCommandType::Stop => self.set_state(ManagerState::Stopped),
         }
     }
 

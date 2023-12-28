@@ -1,10 +1,11 @@
 use std::{
     cmp::min,
     sync::{Mutex, MutexGuard},
+    time::Instant,
 };
 
 use chrono::Utc;
-use godot::builtin::Vector3i;
+use godot::{builtin::Vector3i, log::godot_print};
 
 pub trait Book {
     fn location(&self) -> Vector3i;
@@ -19,18 +20,26 @@ pub trait Book {
 
 pub struct Range<T> {
     pub size: Vector3i,
+    pub start: Vector3i,
+    pub end: Vector3i,
     pub books: Vec<T>,
 }
 
 impl<T> Range<T> {
-    pub fn new(size: Vector3i, books: Vec<T>) -> Self {
-        Self { size, books }
+    pub fn new(start: Vector3i, end: Vector3i, books: Vec<T>) -> Self {
+        let size = end - start;
+        Self {
+            size,
+            start,
+            end,
+            books,
+        }
     }
 
-    pub fn index(&self, location: Vector3i, start_offset: Vector3i) -> usize {
-        ((location.y - start_offset.y) * (self.size.x * self.size.z)
-            + (location.x - start_offset.x) * self.size.z
-            + (location.z - start_offset.z)) as usize
+    pub fn index(&self, location: Vector3i) -> usize {
+        ((location.y - self.start.y) * (self.size.x * self.size.z)
+            + (location.x - self.start.x) * self.size.z
+            + (location.z - self.start.z)) as usize
     }
 }
 
@@ -49,15 +58,21 @@ impl<T: Book + Clone> Library3D<T> {
 
     pub fn check_out_range(&self, start: Vector3i, end: Vector3i) -> anyhow::Result<Range<T>> {
         let mut books;
+        let start_time = Instant::now();
         match self.books.lock() {
             Ok(books_locked) => books = books_locked,
             Err(e) => return Err(anyhow::anyhow!("Failed to lock books: {}", e)),
         }
+        let duration = start_time.elapsed();
+        if duration.as_millis() > 20 {
+            godot_print!("waited for lock for {:?}ms", duration.as_millis());
+        }
 
-        let mut range_end = end.clone();
-        range_end.x = min(range_end.x, self.size.x);
-        range_end.y = min(range_end.y, self.size.y);
-        range_end.z = min(range_end.z, self.size.z);
+        let range_end = Vector3i {
+            x: min(end.x, self.size.x),
+            y: min(end.y, self.size.y),
+            z: min(end.z, self.size.z),
+        };
 
         let selection = self.get_selection(&books, start, range_end)?;
 
@@ -68,14 +83,20 @@ impl<T: Book + Clone> Library3D<T> {
             range_books.push(book.clone())
         }
 
-        Ok(Range::new(range_end - start, range_books))
+        Ok(Range::new(start, range_end, range_books))
     }
 
     pub fn check_in_range(&self, range: &mut Range<T>) -> anyhow::Result<()> {
         let mut books;
+        let start_time = Instant::now();
+
         match self.books.lock() {
             Ok(books_locked) => books = books_locked,
             Err(e) => return Err(anyhow::anyhow!("Failed to lock books: {}", e)),
+        }
+        let duration = start_time.elapsed();
+        if duration.as_millis() > 20 {
+            godot_print!("waited for lock for {:?}ms", duration.as_millis());
         }
 
         for book in range.books.iter_mut() {
@@ -107,29 +128,6 @@ impl<T: Book + Clone> Library3D<T> {
         Ok(())
     }
 
-    pub fn copy_range(&self, start: Vector3i, end: Vector3i) -> anyhow::Result<Range<T>> {
-        let books;
-        match self.books.lock() {
-            Ok(books_locked) => books = books_locked,
-            Err(e) => return Err(anyhow::anyhow!("Failed to lock books: {}", e)),
-        }
-
-        let mut range_end = end.clone();
-        range_end.x = min(range_end.x, self.size.x);
-        range_end.y = min(range_end.y, self.size.y);
-        range_end.z = min(range_end.z, self.size.z);
-
-        let selection = self.get_selection(&books, start, range_end)?;
-
-        let mut range_books = vec![];
-        for i in selection {
-            let book = books.get(i).unwrap();
-            range_books.push(book.clone())
-        }
-
-        Ok(Range::new(range_end - start, range_books))
-    }
-
     fn get_selection(
         &self,
         books: &MutexGuard<'_, Vec<T>>,
@@ -139,10 +137,11 @@ impl<T: Book + Clone> Library3D<T> {
         let mut selection = vec![];
 
         // Dupe check for safety - we should always return ranges within the bounds of the library
-        let mut range_end = end.clone();
-        range_end.x = min(range_end.x, self.size.x);
-        range_end.y = min(range_end.y, self.size.y);
-        range_end.z = min(range_end.z, self.size.z);
+        let range_end = Vector3i {
+            x: min(end.x, self.size.x),
+            y: min(end.y, self.size.y),
+            z: min(end.z, self.size.z),
+        };
 
         for y in start.y..range_end.y {
             for x in start.x..range_end.x {
@@ -171,7 +170,6 @@ impl<T: Book + Clone> Library3D<T> {
         Ok(selection)
     }
 
-    // TODO: repeated in chunk.rs
     fn get_index(&self, location: Vector3i) -> usize {
         (location.y * (self.size.x * self.size.z) + location.x * self.size.z + location.z) as usize
     }

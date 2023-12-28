@@ -1,4 +1,4 @@
-use std::cmp::{max, min};
+use std::cmp::min;
 
 use godot::prelude::*;
 use rand::Rng;
@@ -40,39 +40,6 @@ impl Chunk {
         overlap_x && overlap_y && overlap_z
     }
 
-    // Used to determine which cells to propagate changes in from in the initialize chunk phase
-    pub fn get_neighboring_cells(
-        &self,
-        other: &Chunk,
-        map_size: Vector3i,
-        n: i32,
-    ) -> Vec<Vector3i> {
-        let mut neighbors = vec![];
-
-        let (mut start, mut end) = other.bounds();
-
-        start.x = max(start.x, 0);
-        start.y = max(start.y, 0);
-        start.z = max(start.z, 0);
-
-        end.x = min(end.x, map_size.x);
-        end.y = min(end.y, map_size.y);
-        end.z = min(end.z, map_size.z);
-
-        for x in start.x..end.x {
-            for y in start.y..end.y {
-                for z in start.z..end.z {
-                    let position = Vector3i { x, y, z };
-                    if !self.contains(position) && self.get_cell_neighbors(position, n).len() > 0 {
-                        neighbors.push(position)
-                    }
-                }
-            }
-        }
-
-        neighbors
-    }
-
     pub fn reset_cells(
         &self,
         range: &mut Range<Cell>,
@@ -109,26 +76,11 @@ impl Chunk {
         Ok(cells_clone)
     }
 
-    // Used in conjunction with get_neighbors to pull in changes from neighboring chunks
-    pub fn propagate_cells(
-        &self,
-        range: &mut Range<Cell>,
-        others: &Vec<Cell>,
-    ) -> anyhow::Result<Vec<Cell>> {
-        let mut changes = vec![];
-        for cell in others {
-            let inner_changes = &mut self.propagate(cell, range)?;
-            changes.append(inner_changes);
-        }
-
-        Ok(changes)
-    }
-
     // Choose a cell contained within this chunk and collapse it
     pub fn collapse_next(&self, range: &mut Range<Cell>) -> anyhow::Result<WorkerUpdateStatus> {
         let result = match self.select_lowest_entropy(&range.books) {
             Some(cell_position) => {
-                let cell_index = range.index(cell_position, self.position);
+                let cell_index = range.index(cell_position);
                 if cell_position != range.books[cell_index].position {
                     godot_print!(
                         "[C] WARNING: Cell position mismatch - check index implementation {} (index {}) reported position {}",
@@ -217,14 +169,37 @@ impl Chunk {
         changes.push(changed.clone());
 
         for neighbor_position in self.get_cell_neighbors(changed.position, 1).iter() {
-            let neighbor_index = range.index(*neighbor_position, self.position);
+            let neighbor_index = range.index(*neighbor_position);
             let neighbor_cell = range.books.get(neighbor_index);
             match neighbor_cell {
                 None => continue,
                 Some(neighbor) => {
+                    if *neighbor_position != neighbor.position {
+                        godot_print!(
+                            "[C] WARNING: Cell position mismatch - check index implementation {} (index {}) reported position {}. Range: {}",
+                            neighbor_position,
+                            neighbor_index,
+                            neighbor.position,
+                            range.size,
+                        );
+                    }
                     if let Some(neighbor_changed) = neighbor.changes_from(changed) {
                         if neighbor_changed.possibilities.len() == 0 {
-                            return Err(anyhow::anyhow!("Overcollapsed"));
+                            return Err(anyhow::anyhow!(
+                                "Overcollapsed: neighbor {} had {:?}, collapsed because {} has {:?}",
+                                neighbor.position,
+                                neighbor
+                                    .possibilities
+                                    .iter()
+                                    .map(|p| p.id.clone())
+                                    .collect::<Vec<String>>(),
+                                changed.position,
+                                changed
+                                    .possibilities
+                                    .iter()
+                                    .map(|p| p.id.clone())
+                                    .collect::<Vec<String>>()
+                            ));
                         } else {
                             let neighbor_changed_clone = neighbor_changed.clone();
                             range.books[neighbor_index] = neighbor_changed;
@@ -281,7 +256,7 @@ impl Chunk {
     }
 
     // Returns true iff the given position is located within this chunk
-    fn contains(&self, position: Vector3i) -> bool {
+    pub fn contains(&self, position: Vector3i) -> bool {
         let start = self.position;
         let end = self.position + self.size;
 

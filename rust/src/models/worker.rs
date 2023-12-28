@@ -11,9 +11,9 @@ use super::library::Library3D;
 #[repr(i32)]
 #[derive(Property, Debug, PartialEq)]
 pub enum WorkerCommandType {
-    NOOP = 0,
-    COLLAPSE = 1,
-    STOP = 2,
+    NoOp = 0,
+    Collapse = 1,
+    Stop = 2,
 }
 
 pub struct WorkerCommand {
@@ -33,7 +33,6 @@ impl WorkerCommand {
 pub enum WorkerUpdateStatus {
     Ok(Vec<Cell>),
     Done,
-    Reset(anyhow::Error),
     Error(anyhow::Error),
 }
 

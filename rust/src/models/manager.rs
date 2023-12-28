@@ -5,9 +5,9 @@ use godot::prelude::*;
 #[repr(i32)]
 #[derive(Property, PartialEq, Clone, Copy, Debug)]
 pub enum ManagerState {
-    IDLE = 1,
-    WORKING = 2,
-    STOPPED = 3,
+    Idle = 1,
+    Working = 2,
+    Stopped = 3,
 }
 
 ///
@@ -15,10 +15,10 @@ pub enum ManagerState {
 #[repr(i32)]
 #[derive(Property, Debug)]
 pub enum ManagerCommandType {
-    NOOP = 0,
-    START = 1,
-    PAUSE = 2,
-    STOP = 3,
+    NoOp = 0,
+    Start = 1,
+    Pause = 2,
+    Stop = 3,
 }
 
 #[derive(GodotClass, Debug)]

@@ -26,7 +26,7 @@ func _ready():
 
 
 func _process(_delta):
-	for i in range(100):
+	for i in range(50):
 		if len(changes_queued) > 0:
 			var change = changes_queued.pop_front()
 			var change_position = change[0]

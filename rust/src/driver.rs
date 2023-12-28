@@ -23,12 +23,12 @@ pub struct LWFCDriver {
 #[godot_api]
 impl INode3D for LWFCDriver {
     fn init(node: Base<Node3D>) -> Self {
-        let map_size = Vector3i {
-            x: 53,
-            y: 12,
-            z: 53,
+        let map_size = Vector3i { x: 40, y: 8, z: 40 };
+        let chunk_size = Vector3i {
+            x: 10,
+            y: 10,
+            z: 10,
         };
-        let chunk_size = Vector3i { x: 8, y: 6, z: 8 };
         let chunk_overlap = 2;
 
         let (phone_to_manager, phone_to_main) = Phone::<ManagerCommand, ManagerUpdate>::new_pair();
@@ -62,19 +62,19 @@ impl LWFCDriver {
 
     #[func]
     pub fn start(&mut self) {
-        self.send_command(ManagerCommandType::START)
+        self.send_command(ManagerCommandType::Start)
     }
 
     #[func]
     pub fn stop(&mut self) {
-        self.send_command(ManagerCommandType::STOP)
+        self.send_command(ManagerCommandType::Stop)
     }
 
     pub fn tick(&mut self, _delta: f64) -> Option<()> {
         let update = self.check_for_update()?;
 
-        if let Some(new_state) = update.new_state {
-            godot_print!("[D] Ignoring manager state update: {:?}", new_state);
+        if let Some(_new_state) = update.new_state {
+            // godot_print!("[D] Ignoring manager state update: {:?}", _new_state);
         }
 
         let changes = update.changes?;
@@ -101,7 +101,7 @@ impl LWFCDriver {
     fn send_command(&mut self, command: ManagerCommandType) {
         match self.phone_to_manager.send(ManagerCommand::new(command)) {
             Ok(_) => (),
-            Err(e) => godot_error!("[D] Failed to send command to manager: {}", e),
+            Err(e) => godot_print!("[D] Failed to send command to manager: {}", e),
         }
     }
 }

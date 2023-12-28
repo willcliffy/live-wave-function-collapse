@@ -1,5 +1,3 @@
-use godot::prelude::*;
-
 use crate::models::{
     phone::Phone,
     worker::{WorkerCommand, WorkerCommandType, WorkerUpdate, WorkerUpdateStatus},
@@ -27,12 +25,10 @@ impl Worker {
             match self.tick() {
                 Ok(stop) => {
                     if stop {
-                        godot_print!("[W{}] Stopping normally", self.index);
                         break;
                     }
                 }
                 Err(e) => {
-                    godot_print!("[W{}] sending error update: {}", self.index, e);
                     let update = WorkerUpdate::new(self.index, WorkerUpdateStatus::Error(e));
                     let _ = self.phone.send(update);
                     break;
@@ -45,14 +41,14 @@ impl Worker {
         let mut stop = false;
         let command = &mut self.phone.wait()?;
         match command.command {
-            WorkerCommandType::NOOP => (),
-            WorkerCommandType::STOP => stop = true,
-            WorkerCommandType::COLLAPSE => {
+            WorkerCommandType::NoOp => (),
+            WorkerCommandType::Stop => stop = true,
+            WorkerCommandType::Collapse => {
                 let (start, end) = self.chunk.bounds();
                 let mut range = command.map.check_out_range(start, end)?;
                 let update = match self.chunk.collapse_next(&mut range) {
                     Ok(changes) => WorkerUpdate::new(self.index, changes),
-                    Err(e) => WorkerUpdate::new(self.index, WorkerUpdateStatus::Reset(e)),
+                    Err(e) => WorkerUpdate::new(self.index, WorkerUpdateStatus::Error(e)),
                 };
 
                 command.map.check_in_range(&mut range)?;

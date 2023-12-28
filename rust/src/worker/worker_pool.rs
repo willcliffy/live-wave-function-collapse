@@ -1,14 +1,11 @@
 use std::{
-    cmp::min,
+    cmp::{max, min},
     collections::HashMap,
     sync::{mpsc::TryRecvError, Arc},
     thread,
 };
 
-use godot::{
-    builtin::Vector3i,
-    log::{godot_error, godot_print},
-};
+use godot::{builtin::Vector3i, engine::utilities::ceili, log::godot_print};
 
 use crate::models::{
     driver_update::ManagerUpdate,
@@ -39,10 +36,12 @@ impl WorkerPool {
         let phones = HashMap::new();
 
         let proto_data = Prototype::load();
-        let cells = generate_cells(map_size);
+        let cells = generate_cells(map_size, &proto_data);
         let library = Arc::new(Library3D::new(map_size, cells));
 
         let chunks = generate_chunks(map_size, chunk_size, chunk_overlap);
+
+        godot_print!("last chunk position: {}", chunks.last().unwrap().position);
 
         Self {
             pool_size,
@@ -56,18 +55,11 @@ impl WorkerPool {
     pub fn manage_workers(&mut self) -> Option<ManagerUpdate> {
         let mut changes = vec![];
 
-        while self.phones.len() < self.pool_size {
+        if self.phones.len() < self.pool_size {
             match self.try_assign_new_worker() {
-                Ok(mut changed) => {
-                    if changed.len() > 0 {
-                        changes.append(&mut changed);
-                    } else {
-                        break;
-                    }
-                }
+                Ok(mut changed) => changes.append(&mut changed),
                 Err(e) => {
-                    godot_error!("Failed to assign new worker: {}", e);
-                    break;
+                    godot_print!("[WP] Failed to assign new worker: {}", e);
                 }
             }
         }
@@ -109,7 +101,7 @@ impl WorkerPool {
 
                 let (mut phone_to_worker, phone_to_manager) = Phone::new_pair();
                 let _ = phone_to_worker.send(WorkerCommand::new(
-                    WorkerCommandType::COLLAPSE,
+                    WorkerCommandType::Collapse,
                     self.library.clone(),
                 ));
                 self.phones.insert(chunk_index, phone_to_worker);
@@ -119,7 +111,7 @@ impl WorkerPool {
                     worker.run()
                 });
 
-                godot_print!("[M/WP] worker {} spawned", chunk_index);
+                // godot_print!("[M/WP] worker {} spawned", chunk_index);
                 Ok(changes)
             }
         }
@@ -162,17 +154,12 @@ impl WorkerPool {
 
             let chunk_position = self.chunks[i].position;
 
-            let (start, mut end) = self.chunks[i].bounds();
-
-            end.x = min(end.x, self.library.size.x);
-            end.y = min(end.y, self.library.size.y);
-            end.z = min(end.z, self.library.size.z);
-
+            let (start, end) = self.chunks[i].bounds();
             let distances = vec![
                 start.x,
                 start.z,
-                self.library.size.x - end.x,
-                self.library.size.z - end.z,
+                self.library.size.x - min(end.x, self.library.size.x),
+                self.library.size.z - min(end.y, self.library.size.y),
             ];
 
             let mut distance_to_edge = *distances.iter().min().unwrap();
@@ -194,74 +181,36 @@ impl WorkerPool {
     fn prepare_chunk(&mut self, chunk_index: usize) -> anyhow::Result<Vec<Cell>> {
         let mut changes = vec![];
 
-        let mut neighboring_cells: Vec<Cell> = vec![];
+        let chunk = self.chunks.get_mut(chunk_index).unwrap();
+
+        // 1. Set chunk as active
         {
-            let neighboring_chunks = self
-                .chunks
-                .iter()
-                .filter(|c| c.is_overlapping(&self.chunks[chunk_index]))
-                .collect::<Vec<&Chunk>>();
-
-            let chunk;
-            match self.chunks.get(chunk_index) {
-                Some(valid_chunk) => chunk = valid_chunk,
-                None => return Err(anyhow::anyhow!("No chunk at {}", chunk_index)),
-            }
-
-            for neighbor in neighboring_chunks {
-                let (start, end) = neighbor.bounds();
-                let range = self.library.copy_range(start, end)?;
-                for cell_position in chunk.get_neighboring_cells(neighbor, self.library.size, 1) {
-                    let i = range.index(cell_position, start);
-
-                    // TODO - this breaks because get neighboring cells and index are not playing well together
-                    // panic!();
-
-                    match range.books.get(i) {
-                        Some(cell) => {
-                            let cell_clone = cell.clone();
-                            neighboring_cells.push(cell_clone)
-                        }
-                        None => {
-                            return Err(anyhow::anyhow!(
-                                "Failed to get neighboring cell at {} (index {}). Range should be {} to {} but reported size {}",
-                                cell_position,
-                                i,
-                                start,
-                                end,
-                                range.size
-                            ));
-                        }
-                    }
-                }
-            }
-        }
-
-        {
-            let chunk = self.chunks.get_mut(chunk_index).unwrap();
             chunk.active = true;
             godot_print!(
                 "[M/WP {}] set chunk at {} as active",
                 chunk_index,
                 chunk.position
             );
+        }
 
+        // 2. Reset all overlap from other chunks
+        {
             let (start, end) = chunk.bounds();
             let mut range = self.library.check_out_range(start, end)?;
-
             match chunk.reset_cells(&mut range, &self.proto_data, self.library.size) {
                 Ok(mut chunk_changes) => {
                     changes.append(&mut chunk_changes);
                     godot_print!("[M/WP {}] reset chunk at {}", chunk_index, chunk.position)
                 }
-                Err(e) => godot_error!("[M/WP {}] failed to apply reset chunk: {}", chunk_index, e),
+                Err(e) => godot_print!("[M/WP {}] failed to apply reset chunk: {}", chunk_index, e),
             }
+            self.library.check_in_range(&mut range)?;
+        }
 
-            match chunk.propagate_all(&mut range) {
-                Ok(mut chunk_changes) => changes.append(&mut chunk_changes),
-                Err(e) => godot_error!("Error propagating chunk: {}", e),
-            }
-
+        // 3. Apply custom constraints
+        {
+            let (start, end) = chunk.bounds();
+            let mut range = self.library.check_out_range(start, end)?;
             match chunk.apply_custom_constraints(&mut range, self.library.size) {
                 Ok(()) => {
                     godot_print!(
@@ -270,35 +219,41 @@ impl WorkerPool {
                         chunk.position
                     )
                 }
-                Err(e) => godot_error!(
+                Err(e) => godot_print!(
                     "[M/WP {}] failed to apply custom constraints: {}",
                     chunk_index,
                     e
                 ),
             }
+            self.library.check_in_range(&mut range)?;
+        }
 
+        // 4. Propagate in neighboring cells
+        {
+            let (start, end) = chunk.bounds();
+            let range_start = Vector3i {
+                x: max(0, start.x - 1),
+                y: max(0, start.y - 1),
+                z: max(0, start.z - 1),
+            };
+            let range_end = Vector3i {
+                x: min(end.x + 1, self.library.size.x),
+                y: min(end.y + 1, self.library.size.y),
+                z: min(end.z + 1, self.library.size.z),
+            };
+            let mut range = self.library.check_out_range(range_start, range_end)?;
             match chunk.propagate_all(&mut range) {
-                Ok(mut chunk_changes) => changes.append(&mut chunk_changes),
-                Err(e) => godot_error!("Error propagating chunk: {}", e),
-            }
-
-            match chunk.propagate_cells(&mut range, &neighboring_cells) {
                 Ok(mut chunk_changes) => {
+                    godot_print!(
+                        "[M/WP {}] propagated {:?} changes at {}",
+                        chunk_index,
+                        chunk_changes.len(),
+                        chunk.position
+                    );
                     changes.append(&mut chunk_changes);
                 }
-                Err(e) => godot_error!(
-                    "[M/WP {}] failed to apply propagate {} neighboring cells: {}",
-                    chunk_index,
-                    neighboring_cells.len(),
-                    e
-                ),
+                Err(e) => godot_print!("Error propagating chunk: {}", e),
             }
-
-            match chunk.propagate_all(&mut range) {
-                Ok(mut chunk_changes) => changes.append(&mut chunk_changes),
-                Err(e) => godot_error!("Error propagating chunk: {}", e),
-            }
-
             self.library.check_in_range(&mut range)?;
         }
 
@@ -306,106 +261,106 @@ impl WorkerPool {
     }
 
     fn check_for_updates(&mut self) -> Option<Vec<Cell>> {
-        let mut updates = vec![];
-        let mut completed = vec![];
-        let mut resets = vec![];
+        let mut update_queue: Vec<WorkerUpdate> = vec![];
+        let mut reset_queue: Vec<usize> = vec![];
+        let mut done_queue: Vec<usize> = vec![];
 
-        {
-            for (chunk_index, phone) in self.phones.iter_mut() {
-                match phone.check() {
-                    Ok(update) => match update.status {
-                        WorkerUpdateStatus::Ok(mut changes) => {
-                            updates.append(&mut changes);
+        for (chunk_index, phone) in self.phones.iter_mut() {
+            match phone.check() {
+                Ok(update) => update_queue.push(update),
+                Err(e) => match e {
+                    TryRecvError::Empty => { /* No update from worker */ }
+                    TryRecvError::Disconnected => {
+                        godot_print!("[M/WP {}] unexpected disconnect: {}", chunk_index, e);
+                        reset_queue.push(*chunk_index);
+                        done_queue.push(*chunk_index);
+                    }
+                },
+            }
+        }
 
-                            let _ = phone.send(WorkerCommand::new(
-                                WorkerCommandType::COLLAPSE,
-                                self.library.clone(),
-                            ));
-                        }
-                        WorkerUpdateStatus::Done => {
-                            // Set chunk completed, tell worker to stop
-                            match self.chunks.get_mut(*chunk_index) {
-                                Some(chunk) => {
-                                    chunk.active = false;
-                                    chunk.collapsed = true;
-                                    completed.push(*chunk_index);
-                                }
-                                None => godot_error!(
-                                    "[M/WP] failed to retrieve chunk at {}",
-                                    chunk_index
-                                ),
-                            }
-                        }
-                        WorkerUpdateStatus::Reset(e) => {
-                            godot_print!("[M/WP] reset error from worker {}: {}", chunk_index, e);
-                            resets.push(*chunk_index);
-                        }
-                        WorkerUpdateStatus::Error(e) => {
-                            // Report error
-                            // Reset chunk
-                            godot_print!("[M/WP] error from worker {}: {}", chunk_index, e);
-                            match self.chunks.get_mut(*chunk_index) {
-                                Some(chunk) => {
-                                    chunk.active = false;
-                                    chunk.collapsed = true;
-                                    completed.push(*chunk_index);
-                                }
-                                None => godot_error!(
-                                    "[M/WP] failed to retrieve chunk at {}",
-                                    chunk_index
-                                ),
-                            }
-                        }
-                    },
-                    Err(e) => match e {
-                        TryRecvError::Empty => { /* No update from worker */ }
-                        TryRecvError::Disconnected => {
-                            godot_print!("[M/WP] disconnected from worker {}: {}", chunk_index, e);
-                            match self.chunks.get_mut(*chunk_index) {
-                                Some(chunk) => {
-                                    chunk.active = false;
-                                    chunk.collapsed = true;
-                                    completed.push(*chunk_index);
-                                }
-                                None => godot_error!(
-                                    "[M/WP] failed to retrieve chunk at {}",
-                                    chunk_index
-                                ),
-                            }
-                        }
-                    },
+        let mut changes = vec![];
+        for update in update_queue {
+            match update.status {
+                WorkerUpdateStatus::Ok(mut changed) => {
+                    let phone = self.phones.get_mut(&update.chunk_index)?;
+                    let _ = phone.send(WorkerCommand::new(
+                        WorkerCommandType::Collapse,
+                        self.library.clone(),
+                    ));
+                    changes.append(&mut changed);
+                }
+                WorkerUpdateStatus::Done => {
+                    done_queue.push(update.chunk_index);
+                }
+                WorkerUpdateStatus::Error(e) => {
+                    godot_print!("[M/WP {}] Error: {}, resetting", update.chunk_index, e);
+                    reset_queue.push(update.chunk_index);
+                    done_queue.push(update.chunk_index);
                 }
             }
         }
 
-        for chunk_index in completed {
-            self.phones.remove(&chunk_index);
-            godot_print!("[M/WP {}] thread exited", chunk_index)
-        }
-
-        for chunk_index in resets {
+        for chunk_index in reset_queue {
             match self.prepare_chunk(chunk_index) {
-                Ok(mut changed) => updates.append(&mut changed),
+                Ok(mut changed) => changes.append(&mut changed),
                 Err(e) => {
-                    godot_error!("[M/WP] Failed to reset chunk! {}", e)
+                    godot_print!("[M/WP] Failed to reset chunk! {}", e)
                 }
             }
+            let chunk = self.chunks.get_mut(chunk_index)?;
+            chunk.active = false;
+            chunk.collapsed = false;
         }
 
-        if updates.len() > 0 {
-            return Some(updates);
+        for chunk_index in done_queue {
+            let chunk = self.chunks.get_mut(chunk_index)?;
+            chunk.active = false;
+            chunk.collapsed = true;
+            self.phones.remove(&chunk_index);
+        }
+
+        if changes.len() > 0 {
+            return Some(changes);
         }
 
         None
     }
 }
 
-fn generate_cells(size: Vector3i) -> Vec<Cell> {
+fn generate_cells(size: Vector3i, all_protos: &Vec<Prototype>) -> Vec<Cell> {
     let mut cells = vec![];
     for y in 0..size.y {
         for x in 0..size.x {
             for z in 0..size.z {
-                let cell = Cell::new(Vector3i { x, y, z }, vec![]);
+                let mut cell = Cell::new(Vector3i { x, y, z }, all_protos.clone());
+
+                if cell.position.y == 0 {
+                    Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::DOWN);
+                } else {
+                    Prototype::retain_not_constrained(&mut cell.possibilities, "BOT".into());
+                }
+
+                if cell.position.y == size.y - 1 {
+                    Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::UP);
+                }
+
+                if cell.position.x == 0 {
+                    Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::LEFT);
+                }
+
+                if cell.position.x == size.x - 1 {
+                    Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::RIGHT);
+                }
+
+                if cell.position.z == 0 {
+                    Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::FORWARD);
+                }
+
+                if cell.position.z == size.z - 1 {
+                    Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::BACK);
+                }
+
                 cells.push(cell);
             }
         }
@@ -413,13 +368,10 @@ fn generate_cells(size: Vector3i) -> Vec<Cell> {
     cells
 }
 
-fn generate_chunks(size: Vector3i, chunk_size: Vector3i, chunk_overlap: i32) -> Vec<Chunk> {
-    let num_x =
-        godot::engine::utilities::ceili((size.x / (chunk_size.x - chunk_overlap)) as f64) as i32;
-    let num_y =
-        godot::engine::utilities::ceili((size.y / (chunk_size.y - chunk_overlap)) as f64) as i32;
-    let num_z =
-        godot::engine::utilities::ceili((size.z / (chunk_size.z - chunk_overlap)) as f64) as i32;
+fn generate_chunks(map_size: Vector3i, chunk_size: Vector3i, chunk_overlap: i32) -> Vec<Chunk> {
+    let num_x = ceili((map_size.x / (chunk_size.x - chunk_overlap)) as f64) as i32;
+    let num_y = ceili((map_size.y / (chunk_size.y - chunk_overlap)) as f64) as i32;
+    let num_z = ceili((map_size.z / (chunk_size.z - chunk_overlap)) as f64) as i32;
     let position_factor = chunk_size - Vector3i::ONE * chunk_overlap;
 
     let mut chunks = vec![];
@@ -427,7 +379,20 @@ fn generate_chunks(size: Vector3i, chunk_size: Vector3i, chunk_overlap: i32) -> 
         for x in 0..num_x {
             for z in 0..num_z {
                 let position = position_factor * Vector3i { x, y, z };
-                let new_chunk = Chunk::new(position, chunk_size);
+
+                let end = position + chunk_size;
+                let mut clamped_chunk_size = chunk_size;
+                if end.x > map_size.x {
+                    clamped_chunk_size.x = map_size.x - position.x;
+                }
+                if end.y > map_size.y {
+                    clamped_chunk_size.y = map_size.y - position.y;
+                }
+                if end.z > map_size.z {
+                    clamped_chunk_size.z = map_size.z - position.z;
+                }
+
+                let new_chunk = Chunk::new(position, clamped_chunk_size);
                 chunks.push(new_chunk);
             }
         }
