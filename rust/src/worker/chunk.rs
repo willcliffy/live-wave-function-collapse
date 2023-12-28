@@ -3,26 +3,26 @@ use std::cmp::min;
 use godot::prelude::*;
 use rand::Rng;
 
-use crate::models::{library::Range, prototype::Prototype, worker::WorkerUpdateStatus};
+use crate::models::{
+    library::Range, map::ChunkState, prototype::Prototype, worker::WorkerUpdateStatus,
+};
 
 use super::cell::Cell;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Chunk {
+    pub state: ChunkState,
     pub position: Vector3i,
     pub size: Vector3i,
-
-    pub active: bool,
-    pub collapsed: bool,
 }
 
 impl Chunk {
     pub fn new(position: Vector3i, size: Vector3i) -> Self {
+        let state = ChunkState::Ready;
         Self {
+            state,
             position,
             size,
-            active: false,
-            collapsed: false,
         }
     }
 
@@ -271,7 +271,7 @@ impl Chunk {
     // Get all neighboring cells that are exactly one unit away, measured using Manhattan distance
     // That is, only check the 6 cardinal directions directly adjacent to cell_position
     // Diagonal cells are not returned. Cells that are not within this chunk are not returned.
-    fn get_cell_neighbors(self, cell_position: Vector3i, n: i32) -> Vec<Vector3i> {
+    fn get_cell_neighbors(&self, cell_position: Vector3i, n: i32) -> Vec<Vector3i> {
         let mut neighbors = vec![];
         for direction in DIRECTIONS {
             for i in 1..=n {

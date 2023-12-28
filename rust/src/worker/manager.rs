@@ -5,10 +5,11 @@ use godot::prelude::*;
 use crate::models::{
     driver_update::ManagerUpdate,
     manager::{ManagerCommand, ManagerCommandType, ManagerState},
+    map::MapParameters,
     phone::Phone,
 };
 
-use super::worker_pool::WorkerPool;
+use super::{map_director::MapDirector, worker_pool::WorkerPool};
 
 const NUM_THREADS: usize = 4;
 
@@ -20,21 +21,20 @@ pub struct Manager {
 
     // Receive updates from and send commands to worker threads
     pool: WorkerPool,
+
+    map_director: MapDirector,
 }
 
 impl Manager {
-    pub fn new(
-        phone: Phone<ManagerUpdate, ManagerCommand>,
-        map_size: Vector3i,
-        chunk_size: Vector3i,
-        chunk_overlap: i32,
-    ) -> Self {
-        let pool = WorkerPool::new(NUM_THREADS, map_size, chunk_size, chunk_overlap);
+    pub fn new(phone: Phone<ManagerUpdate, ManagerCommand>, map_params: MapParameters) -> Self {
+        let pool = WorkerPool::new(NUM_THREADS);
+        let map_director = MapDirector::new(&map_params);
 
         Self {
             state: ManagerState::Idle,
             phone,
             pool,
+            map_director,
         }
     }
 
@@ -58,10 +58,12 @@ impl Manager {
                 ManagerState::Working => match self.phone.check() {
                     Ok(command) => self.on_command_received(command),
                     Err(e) => match e {
-                        TryRecvError::Empty => match self.pool.manage_workers() {
-                            Some(update) => self.report(update),
-                            None => continue,
-                        },
+                        TryRecvError::Empty => {
+                            match self.pool.manage_workers(&mut self.map_director) {
+                                Some(update) => self.report(update),
+                                None => continue,
+                            }
+                        }
                         TryRecvError::Disconnected => self.set_state(ManagerState::Stopped),
                     },
                 },

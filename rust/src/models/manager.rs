@@ -1,5 +1,7 @@
 use godot::prelude::*;
 
+use crate::worker::{cell::Cell, chunk::Chunk};
+
 ///
 
 #[repr(i32)]
@@ -39,5 +41,6 @@ impl ManagerCommand {
 pub enum GetNextChunkResponse {
     NoChunksLeft,
     NoChunksReady,
-    ChunkReady(usize),
+    ChunkReady(usize, Chunk, Vec<Cell>),
+    Error(anyhow::Error),
 }

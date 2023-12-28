@@ -4,6 +4,7 @@ use godot::prelude::*;
 
 use crate::models::driver_update::ManagerUpdate;
 use crate::models::manager::{ManagerCommand, ManagerCommandType};
+use crate::models::map::MapParameters;
 use crate::models::phone::Phone;
 use crate::worker::manager::Manager;
 
@@ -30,11 +31,12 @@ impl INode3D for LWFCDriver {
             z: 10,
         };
         let chunk_overlap = 2;
+        let map_parameters = MapParameters::new(map_size, chunk_size, chunk_overlap);
 
         let (phone_to_manager, phone_to_main) = Phone::<ManagerCommand, ManagerUpdate>::new_pair();
 
         let _manager_handle = thread::spawn(move || {
-            let mut manager = Manager::new(phone_to_main, map_size, chunk_size, chunk_overlap);
+            let mut manager = Manager::new(phone_to_main, map_parameters);
             manager.run()
         });
 

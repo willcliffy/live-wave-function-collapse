@@ -1,11 +1,10 @@
 use std::{
     cmp::min,
     sync::{Mutex, MutexGuard},
-    time::Instant,
 };
 
 use chrono::Utc;
-use godot::{builtin::Vector3i, log::godot_print};
+use godot::builtin::Vector3i;
 
 pub trait Book {
     fn location(&self) -> Vector3i;
@@ -58,15 +57,17 @@ impl<T: Book + Clone> Library3D<T> {
 
     pub fn check_out_range(&self, start: Vector3i, end: Vector3i) -> anyhow::Result<Range<T>> {
         let mut books;
-        let start_time = Instant::now();
+
+        // TODO - slight perf bottleneck here
+        // let start_time = Instant::now();
         match self.books.lock() {
             Ok(books_locked) => books = books_locked,
             Err(e) => return Err(anyhow::anyhow!("Failed to lock books: {}", e)),
         }
-        let duration = start_time.elapsed();
-        if duration.as_millis() > 20 {
-            godot_print!("waited for lock for {:?}ms", duration.as_millis());
-        }
+        // let duration = start_time.elapsed();
+        // if duration.as_millis() > 20 {
+        //     godot_print!("waited for lock for {:?}ms", duration.as_millis());
+        // }
 
         let range_end = Vector3i {
             x: min(end.x, self.size.x),
@@ -88,16 +89,17 @@ impl<T: Book + Clone> Library3D<T> {
 
     pub fn check_in_range(&self, range: &mut Range<T>) -> anyhow::Result<()> {
         let mut books;
-        let start_time = Instant::now();
 
+        // TODO - slight perf bottleneck here
+        // let start_time = Instant::now();
         match self.books.lock() {
             Ok(books_locked) => books = books_locked,
             Err(e) => return Err(anyhow::anyhow!("Failed to lock books: {}", e)),
         }
-        let duration = start_time.elapsed();
-        if duration.as_millis() > 20 {
-            godot_print!("waited for lock for {:?}ms", duration.as_millis());
-        }
+        // let duration = start_time.elapsed();
+        // if duration.as_millis() > 20 {
+        //     godot_print!("waited for lock for {:?}ms", duration.as_millis());
+        // }
 
         for book in range.books.iter_mut() {
             let index = self.get_index(book.location());
