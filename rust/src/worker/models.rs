@@ -2,9 +2,7 @@ use std::sync::Arc;
 
 use godot::prelude::*;
 
-use crate::worker::cell::Cell;
-
-use super::library::Library3D;
+use crate::{map::cell::Cell, models::library::Library3D};
 
 ///
 

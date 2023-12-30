@@ -2,14 +2,16 @@ use std::sync::mpsc::TryRecvError;
 
 use godot::prelude::*;
 
-use crate::models::{
-    driver_update::ManagerUpdate,
-    manager::{ManagerCommand, ManagerCommandType, ManagerState},
-    map::MapParameters,
-    phone::Phone,
+use crate::{
+    manager::models::ManagerCommandType, map::models::MapParameters, models::phone::Phone,
 };
 
-use super::{map_director::MapDirector, worker_pool::WorkerPool};
+use super::{
+    map_director::MapDirector,
+    map_validator::MapValidator,
+    models::{ManagerCommand, ManagerState, ManagerUpdate},
+    worker_pool::WorkerPool,
+};
 
 const NUM_THREADS: usize = 4;
 
@@ -22,19 +24,23 @@ pub struct Manager {
     // Receive updates from and send commands to worker threads
     pool: WorkerPool,
 
+    // Other reports
     map_director: MapDirector,
+    map_validator: MapValidator,
 }
 
 impl Manager {
     pub fn new(phone: Phone<ManagerUpdate, ManagerCommand>, map_params: MapParameters) -> Self {
         let pool = WorkerPool::new(NUM_THREADS);
         let map_director = MapDirector::new(&map_params);
+        let map_validator = MapValidator::new();
 
         Self {
             state: ManagerState::Idle,
             phone,
             pool,
             map_director,
+            map_validator,
         }
     }
 
@@ -59,8 +65,17 @@ impl Manager {
                     Ok(command) => self.on_command_received(command),
                     Err(e) => match e {
                         TryRecvError::Empty => {
-                            match self.pool.manage_workers(&mut self.map_director) {
-                                Some(update) => self.report(update),
+                            match self
+                                .pool
+                                .manage_workers(&mut self.map_director, &mut self.map_validator)
+                            {
+                                Some(update) => {
+                                    let new_state = update.new_state;
+                                    self.report(update);
+                                    if new_state == Some(ManagerState::Stopped) {
+                                        break;
+                                    }
+                                }
                                 None => continue,
                             }
                         }

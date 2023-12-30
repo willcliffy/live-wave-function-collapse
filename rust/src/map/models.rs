@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use godot::{builtin::Vector3i, engine::utilities::ceili};
 
-use crate::worker::{cell::Cell, chunk::Chunk};
+use crate::models::{library::Library3D, prototype::Prototype};
 
-use super::{library::Library3D, prototype::Prototype};
+use super::{cell::Cell, chunk::Chunk};
 
 pub struct MapParameters {
     pub map_size: Vector3i,
@@ -63,12 +63,18 @@ impl MapParameters {
     }
 
     pub fn generate_chunks(&self) -> Vec<Chunk> {
-        let num_x =
-            ceili((self.map_size.x / (self.chunk_size.x - self.chunk_overlap)) as f64) as i32;
-        let num_y =
-            ceili((self.map_size.y / (self.chunk_size.y - self.chunk_overlap)) as f64) as i32;
-        let num_z =
-            ceili((self.map_size.z / (self.chunk_size.z - self.chunk_overlap)) as f64) as i32;
+        let num_x = ceili(
+            ((self.map_size.x + self.chunk_overlap) / (self.chunk_size.x - self.chunk_overlap))
+                as f64,
+        ) as i32;
+        let num_y = ceili(
+            ((self.map_size.y + self.chunk_overlap) / (self.chunk_size.y - self.chunk_overlap))
+                as f64,
+        ) as i32;
+        let num_z = ceili(
+            ((self.map_size.z + self.chunk_overlap) / (self.chunk_size.z - self.chunk_overlap))
+                as f64,
+        ) as i32;
         let position_factor = self.chunk_size - Vector3i::ONE * self.chunk_overlap;
 
         let mut chunks = vec![];
@@ -101,10 +107,9 @@ impl MapParameters {
 
 //
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ChunkState {
     Ready,
-    Initializing,
     Active,
     Collapsed,
 }

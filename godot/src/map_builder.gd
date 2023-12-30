@@ -3,6 +3,8 @@ extends Node3D
 @onready var driver = $LWFCDriver
 @onready var cell_scene = preload("res://scenes/Cell.tscn")
 
+const CHANGES_DISPLAY_PER_PROCESS_FRAME = 200;
+
 var cell_matrix: Array = []
 
 var changes_queued: Array = []
@@ -26,13 +28,15 @@ func _ready():
 
 
 func _process(_delta):
-	for i in range(50):
-		if len(changes_queued) > 0:
-			var change = changes_queued.pop_front()
-			var change_position = change[0]
-			var cell = cell_matrix[change_position.y][change_position.x][change_position.z]
-			if cell:
-				cell.change(change[1])
+	for i in range(CHANGES_DISPLAY_PER_PROCESS_FRAME):
+		if len(changes_queued) == 0:
+			break
+
+		var change = changes_queued.pop_front()
+		var change_position = change[0]
+		var cell = cell_matrix[change_position.y][change_position.x][change_position.z]
+		if cell:
+			cell.change(change[1])
 
 
 func play_expand_animation(cell_position: Vector3, protos: Array):

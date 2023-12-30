@@ -6,6 +6,15 @@ use std::{
 use chrono::Utc;
 use godot::builtin::Vector3i;
 
+const DIRECTIONS: &'static [Vector3i] = &[
+    Vector3i::UP,
+    Vector3i::DOWN,
+    Vector3i::RIGHT,
+    Vector3i::LEFT,
+    Vector3i::FORWARD,
+    Vector3i::BACK,
+];
+
 pub trait Book {
     fn location(&self) -> Vector3i;
 
@@ -39,6 +48,31 @@ impl<T> Range<T> {
         ((location.y - self.start.y) * (self.size.x * self.size.z)
             + (location.x - self.start.x) * self.size.z
             + (location.z - self.start.z)) as usize
+    }
+
+    // Returns true iff the given position is located within this range
+    pub fn contains(&self, position: Vector3i) -> bool {
+        position.x >= self.start.x
+            && position.x < self.end.x
+            && position.y >= self.start.y
+            && position.y < self.end.y
+            && position.z >= self.start.z
+            && position.z < self.end.z
+    }
+
+    // Get all neighboring cells that are exactly one unit away, measured using Manhattan distance
+    // That is, only check the 6 cardinal directions directly adjacent to cell_position
+    // Diagonal cells are not returned. Cells that are not within this range are not returned.
+    pub fn get_neighbors(&self, position: Vector3i) -> Vec<Vector3i> {
+        let mut neighbors = vec![];
+        for direction in DIRECTIONS {
+            let neighbor_position = position + *direction;
+            if self.contains(neighbor_position) {
+                neighbors.push(neighbor_position);
+            }
+        }
+
+        neighbors
     }
 }
 

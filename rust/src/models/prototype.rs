@@ -142,11 +142,10 @@ impl Prototype {
             .any(|p| self.compatible_with(p.id.clone(), direction))
     }
 
-    pub fn _uncapped(protos: &Vec<Prototype>, direction: Vector3i) -> Vec<Prototype> {
+    pub fn _uncapped(protos: &Vec<Prototype>, direction: Vector3i) -> Vec<&Prototype> {
         protos
             .iter()
             .filter(|p| p.compatible_with("p-1".into(), direction))
-            .cloned()
             .collect()
     }
 
@@ -164,5 +163,17 @@ impl Prototype {
 
     pub fn retain_not_constrained(protos: &mut Vec<Prototype>, constraint: String) {
         protos.retain(|p| p.constrain_to != constraint)
+    }
+
+    pub fn get_slot(proto: &Prototype, direction: Vector3i) -> String {
+        match direction {
+            Vector3i::UP => proto.pos_z.clone(),
+            Vector3i::DOWN => proto.neg_z.clone(),
+            Vector3i::RIGHT => proto.pos_x.clone(),
+            Vector3i::LEFT => proto.neg_x.clone(),
+            Vector3i::FORWARD => proto.pos_y.clone(),
+            Vector3i::BACK => proto.neg_y.clone(),
+            Vector3i { x: _, y: _, z: _ } => "".into(),
+        }
     }
 }

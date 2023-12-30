@@ -1,9 +1,8 @@
-use crate::models::{
-    phone::Phone,
-    worker::{WorkerCommand, WorkerCommandType, WorkerUpdate, WorkerUpdateStatus},
-};
+use godot::log::godot_print;
 
-use super::chunk::Chunk;
+use crate::{map::chunk::Chunk, models::phone::Phone};
+
+use super::models::{WorkerCommand, WorkerCommandType, WorkerUpdate, WorkerUpdateStatus};
 
 pub struct Worker {
     phone: Phone<WorkerUpdate, WorkerCommand>,
@@ -47,16 +46,24 @@ impl Worker {
                 let (start, end) = self.chunk.bounds();
                 let mut range = command.map.check_out_range(start, end)?;
                 let update = match self.chunk.collapse_next(&mut range) {
-                    Ok(changes) => WorkerUpdate::new(self.index, changes),
+                    Ok(status) => WorkerUpdate::new(self.index, status),
                     Err(e) => WorkerUpdate::new(self.index, WorkerUpdateStatus::Error(e)),
                 };
 
                 command.map.check_in_range(&mut range)?;
 
-                match update.status {
+                match &update.status {
                     WorkerUpdateStatus::Done => stop = true,
                     WorkerUpdateStatus::Error(_) => stop = true,
-                    _ => (),
+                    WorkerUpdateStatus::Ok(changes) => {
+                        if changes.len() == 0 {
+                            godot_print!(
+                                "Worker {} reporting {} changes",
+                                self.index,
+                                changes.len()
+                            )
+                        }
+                    }
                 }
 
                 self.phone.send(update)?;

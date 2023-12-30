@@ -2,17 +2,26 @@ use std::thread::{self, JoinHandle};
 
 use godot::prelude::*;
 
-use crate::models::driver_update::ManagerUpdate;
-use crate::models::manager::{ManagerCommand, ManagerCommandType};
-use crate::models::map::MapParameters;
+use crate::manager::manager::Manager;
+use crate::manager::models::{ManagerCommand, ManagerCommandType, ManagerState, ManagerUpdate};
+use crate::map::models::MapParameters;
 use crate::models::phone::Phone;
-use crate::worker::manager::Manager;
+
+#[repr(i32)]
+#[derive(Property, Clone, Export, PartialEq)]
+pub enum DriverState {
+    Stopped = 0,
+    Running = 1,
+}
 
 #[derive(GodotClass)]
 #[class(base=Node3D)]
 pub struct LWFCDriver {
     _manager_handle: JoinHandle<()>,
     phone_to_manager: Phone<ManagerCommand, ManagerUpdate>,
+
+    #[export]
+    state: DriverState,
 
     #[export]
     map_size: Vector3i,
@@ -24,12 +33,8 @@ pub struct LWFCDriver {
 #[godot_api]
 impl INode3D for LWFCDriver {
     fn init(node: Base<Node3D>) -> Self {
-        let map_size = Vector3i { x: 40, y: 8, z: 40 };
-        let chunk_size = Vector3i {
-            x: 10,
-            y: 10,
-            z: 10,
-        };
+        let map_size = Vector3i { x: 30, y: 8, z: 30 };
+        let chunk_size = Vector3i { x: 10, y: 6, z: 10 };
         let chunk_overlap = 2;
         let map_parameters = MapParameters::new(map_size, chunk_size, chunk_overlap);
 
@@ -43,13 +48,16 @@ impl INode3D for LWFCDriver {
         LWFCDriver {
             _manager_handle,
             phone_to_manager,
+            state: DriverState::Running,
             map_size,
             node,
         }
     }
 
     fn process(&mut self, delta: f64) {
-        self.tick(delta);
+        if self.state == DriverState::Running {
+            self.tick(delta);
+        }
     }
 
     fn exit_tree(&mut self) {
@@ -76,7 +84,9 @@ impl LWFCDriver {
         let update = self.check_for_update()?;
 
         if let Some(_new_state) = update.new_state {
-            // godot_print!("[D] Ignoring manager state update: {:?}", _new_state);
+            if _new_state == ManagerState::Stopped {
+                self.state = DriverState::Stopped;
+            }
         }
 
         let changes = update.changes?;

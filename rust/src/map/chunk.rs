@@ -3,9 +3,10 @@ use std::cmp::min;
 use godot::prelude::*;
 use rand::Rng;
 
-use crate::models::{
-    library::Range, map::ChunkState, prototype::Prototype, worker::WorkerUpdateStatus,
-};
+use crate::models::{library::Range, prototype::Prototype};
+
+use crate::map::models::ChunkState;
+use crate::worker::models::WorkerUpdateStatus;
 
 use super::cell::Cell;
 
@@ -77,7 +78,7 @@ impl Chunk {
     }
 
     // Choose a cell contained within this chunk and collapse it
-    pub fn collapse_next(&self, range: &mut Range<Cell>) -> anyhow::Result<WorkerUpdateStatus> {
+    pub fn collapse_next(&mut self, range: &mut Range<Cell>) -> anyhow::Result<WorkerUpdateStatus> {
         let result = match self.select_lowest_entropy(&range.books) {
             Some(cell_position) => {
                 let cell_index = range.index(cell_position);
@@ -98,7 +99,10 @@ impl Chunk {
                     None => Err(anyhow::anyhow!("Failed to collapse next!")),
                 }
             }
-            None => Ok(WorkerUpdateStatus::Done),
+            None => {
+                self.state = ChunkState::Collapsed;
+                Ok(WorkerUpdateStatus::Done)
+            }
         };
 
         result
@@ -114,11 +118,11 @@ impl Chunk {
 
     // No uncapped cells along the edge of the map. No uncapped cells along the top of the chunk
     // Prototypes marked `"constrain_to": "BOT"` should only appear in cells where y = 0
-    pub fn apply_custom_constraints(
+    pub fn apply_constraints(
         &self,
         range: &mut Range<Cell>,
         map_size: Vector3i,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<Vec<Cell>> {
         let chunk_top_y = min(self.position.y + self.size.y, map_size.y) - 1;
         for cell in range.books.iter_mut() {
             if cell.position.y == 0 {
@@ -148,7 +152,7 @@ impl Chunk {
             }
         }
 
-        Ok(())
+        Ok(vec![])
     }
 
     // Should not be necessary theoretically, but useful in many situations and as part of several
@@ -168,7 +172,7 @@ impl Chunk {
         let mut changes: Vec<Cell> = vec![];
         changes.push(changed.clone());
 
-        for neighbor_position in self.get_cell_neighbors(changed.position, 1).iter() {
+        for neighbor_position in range.get_neighbors(changed.position).iter() {
             let neighbor_index = range.index(*neighbor_position);
             let neighbor_cell = range.books.get(neighbor_index);
             match neighbor_cell {
@@ -254,43 +258,4 @@ impl Chunk {
 
         None
     }
-
-    // Returns true iff the given position is located within this chunk
-    pub fn contains(&self, position: Vector3i) -> bool {
-        let start = self.position;
-        let end = self.position + self.size;
-
-        position.x >= start.x
-            && position.x < end.x
-            && position.y >= start.y
-            && position.y < end.y
-            && position.z >= start.z
-            && position.z < end.z
-    }
-
-    // Get all neighboring cells that are exactly one unit away, measured using Manhattan distance
-    // That is, only check the 6 cardinal directions directly adjacent to cell_position
-    // Diagonal cells are not returned. Cells that are not within this chunk are not returned.
-    fn get_cell_neighbors(&self, cell_position: Vector3i, n: i32) -> Vec<Vector3i> {
-        let mut neighbors = vec![];
-        for direction in DIRECTIONS {
-            for i in 1..=n {
-                let neighbor_position = cell_position + (*direction * i);
-                if self.contains(neighbor_position) {
-                    neighbors.push(neighbor_position);
-                }
-            }
-        }
-
-        neighbors
-    }
 }
-
-const DIRECTIONS: &'static [Vector3i] = &[
-    Vector3i::UP,
-    Vector3i::DOWN,
-    Vector3i::RIGHT,
-    Vector3i::LEFT,
-    Vector3i::FORWARD,
-    Vector3i::BACK,
-];
