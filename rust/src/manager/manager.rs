@@ -13,7 +13,7 @@ use super::{
     worker_pool::WorkerPool,
 };
 
-const NUM_THREADS: usize = 4;
+const NUM_THREADS: usize = 1;
 
 pub struct Manager {
     state: ManagerState,

@@ -125,31 +125,31 @@ impl Chunk {
     ) -> anyhow::Result<Vec<Cell>> {
         let chunk_top_y = min(self.position.y + self.size.y, map_size.y) - 1;
         for cell in range.books.iter_mut() {
-            if cell.position.y == 0 {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::DOWN);
-            } else {
-                Prototype::retain_not_constrained(&mut cell.possibilities, "BOT".into());
-            }
+            // if cell.position.y == 0 {
+            //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::DOWN);
+            // } else {
+            //     Prototype::retain_not_constrained(&mut cell.possibilities, "BOT".into());
+            // }
 
-            if cell.position.y == chunk_top_y {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::UP);
-            }
+            // if cell.position.y == chunk_top_y {
+            //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::UP);
+            // }
 
-            if cell.position.x == 0 {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::LEFT);
-            }
+            // if cell.position.x == 0 {
+            //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::LEFT);
+            // }
 
-            if cell.position.x == map_size.x - 1 {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::RIGHT);
-            }
+            // if cell.position.x == map_size.x - 1 {
+            //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::RIGHT);
+            // }
 
-            if cell.position.z == 0 {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::FORWARD);
-            }
+            // if cell.position.z == 0 {
+            //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::FORWARD);
+            // }
 
-            if cell.position.z == map_size.z - 1 {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::BACK);
-            }
+            // if cell.position.z == map_size.z - 1 {
+            //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::BACK);
+            // }
         }
 
         Ok(vec![])
@@ -190,19 +190,19 @@ impl Chunk {
                     if let Some(neighbor_changed) = neighbor.changes_from(changed) {
                         if neighbor_changed.possibilities.len() == 0 {
                             return Err(anyhow::anyhow!(
-                                "Overcollapsed: neighbor {} had {:?}, collapsed because {} has {:?}",
-                                neighbor.position,
-                                neighbor
-                                    .possibilities
-                                    .iter()
-                                    .map(|p| p.id.clone())
-                                    .collect::<Vec<String>>(),
-                                changed.position,
-                                changed
-                                    .possibilities
-                                    .iter()
-                                    .map(|p| p.id.clone())
-                                    .collect::<Vec<String>>()
+                                "Overcollapsed" // : neighbor {} had {:?}, collapsed because {} has {:?}",
+                                                // neighbor.position,
+                                                // neighbor
+                                                //     .possibilities
+                                                //     .iter()
+                                                //     .map(|p| p.id.clone())
+                                                //     .collect::<Vec<String>>(),
+                                                // changed.position,
+                                                // changed
+                                                //     .possibilities
+                                                //     .iter()
+                                                //     .map(|p| p.id.clone())
+                                                //     .collect::<Vec<String>>()
                             ));
                         } else {
                             let neighbor_changed_clone = neighbor_changed.clone();

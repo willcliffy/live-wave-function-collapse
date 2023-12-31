@@ -122,25 +122,34 @@ impl MapValidator {
             }
 
             for neighbor_position in range.get_neighbors(position) {
-                let slot = Prototype::get_slot(proto, neighbor_position - position);
-                if slot == "-1f" || slot == "-1" {
-                    // godot_print!("skipping neighbor at position {neighbor_position} since position {position} has proto {:?}", proto);
-                    continue;
-                }
-
                 let neighbor_index = range.index(neighbor_position);
                 if visited.contains_key(&neighbor_index) {
                     continue;
                 }
 
                 let neighbor_cell = range.books.get(neighbor_index).unwrap();
-                if neighbor_cell.possibilities.len() == 1 {
-                    visited.insert(neighbor_index, ());
-                    let neighbor_proto = neighbor_cell.possibilities.first().unwrap();
-                    if neighbor_proto.id != "p-1" {
-                        traversal_list.push(neighbor_position);
-                    }
+                if neighbor_cell.entropy() != 1 {
+                    continue;
                 }
+
+                let slot = Prototype::get_slot(proto, neighbor_position - position);
+                if slot == "-1f" || slot == "-1" {
+                    // godot_print!("skipping neighbor at position {neighbor_position} since position {position} has proto {:?}", proto);
+                    continue;
+                }
+
+                visited.insert(neighbor_index, ());
+
+                let neighbor_proto = neighbor_cell.possibilities.first().unwrap();
+                if neighbor_proto.id == "p-1" {
+                    godot_print!(
+                        "[WARN] got p-1 cell in traversal. Slot {slot}: \n\t{position}{:?}\n\t{neighbor_position} p-1",
+                        proto,
+                    );
+                    continue;
+                }
+
+                traversal_list.push(neighbor_position);
             }
         }
 

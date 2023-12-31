@@ -9,6 +9,7 @@ var cell_matrix: Array = []
 
 var changes_queued: Array = []
 
+var cell_size: float = 10
 
 func _ready():
 	$CameraBase.position += Vector3(driver.map_size.x / 2, 0, driver.map_size.z / 2)
@@ -19,7 +20,8 @@ func _ready():
 			for z in range(driver.map_size.z):
 				var cell = cell_scene.instantiate()
 				cell.name = "Cell %d %d %d" % [x, y, z]
-				cell.position = Vector3(x, y, z)
+				cell.position = Vector3(x * cell_size, y * cell_size, z * cell_size)
+				cell.get_node("Highlight").mesh.size = cell_size * Vector3.ONE
 				add_child(cell)
 				cell.owner = self
 				cell_matrix[y][x].append(cell)

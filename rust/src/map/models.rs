@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use godot::{builtin::Vector3i, engine::utilities::ceili};
+use godot::{builtin::Vector3i, engine::utilities::ceili, log::godot_print};
 
 use crate::models::{library::Library3D, prototype::Prototype};
 
@@ -28,31 +28,31 @@ impl MapParameters {
                 for z in 0..self.map_size.z {
                     let mut cell = Cell::new(Vector3i { x, y, z }, all_protos.clone());
 
-                    if cell.position.y == 0 {
-                        Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::DOWN);
-                    } else {
-                        Prototype::retain_not_constrained(&mut cell.possibilities, "BOT".into());
-                    }
+                    // if cell.position.y == 0 {
+                    //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::DOWN);
+                    // } else {
+                    //     Prototype::retain_not_constrained(&mut cell.possibilities, "BOT".into());
+                    // }
 
-                    if cell.position.y == self.map_size.y - 1 {
-                        Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::UP);
-                    }
+                    // if cell.position.y == self.map_size.y - 1 {
+                    //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::UP);
+                    // }
 
-                    if cell.position.x == 0 {
-                        Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::LEFT);
-                    }
+                    // if cell.position.x == 0 {
+                    //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::LEFT);
+                    // }
 
-                    if cell.position.x == self.map_size.x - 1 {
-                        Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::RIGHT);
-                    }
+                    // if cell.position.x == self.map_size.x - 1 {
+                    //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::RIGHT);
+                    // }
 
-                    if cell.position.z == 0 {
-                        Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::FORWARD);
-                    }
+                    // if cell.position.z == 0 {
+                    //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::FORWARD);
+                    // }
 
-                    if cell.position.z == self.map_size.z - 1 {
-                        Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::BACK);
-                    }
+                    // if cell.position.z == self.map_size.z - 1 {
+                    //     Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::BACK);
+                    // }
 
                     cells.push(cell);
                 }
@@ -63,18 +63,28 @@ impl MapParameters {
     }
 
     pub fn generate_chunks(&self) -> Vec<Chunk> {
-        let num_x = ceili(
-            ((self.map_size.x + self.chunk_overlap) / (self.chunk_size.x - self.chunk_overlap))
-                as f64,
-        ) as i32;
-        let num_y = ceili(
-            ((self.map_size.y + self.chunk_overlap) / (self.chunk_size.y - self.chunk_overlap))
-                as f64,
-        ) as i32;
-        let num_z = ceili(
-            ((self.map_size.z + self.chunk_overlap) / (self.chunk_size.z - self.chunk_overlap))
-                as f64,
-        ) as i32;
+        let mut num_x = 1;
+        let mut num_y = 1;
+        let mut num_z = 1;
+
+        if self.chunk_size.x > self.chunk_overlap {
+            num_x = ceili(
+                ((self.map_size.x + self.chunk_overlap) / (self.chunk_size.x - self.chunk_overlap))
+                    as f64,
+            ) as i32;
+        }
+        if self.chunk_size.y > self.chunk_overlap {
+            num_y = ceili(
+                ((self.map_size.y + self.chunk_overlap) / (self.chunk_size.y - self.chunk_overlap))
+                    as f64,
+            ) as i32;
+        }
+        if self.chunk_size.z > self.chunk_overlap {
+            num_z = ceili(
+                ((self.map_size.z + self.chunk_overlap) / (self.chunk_size.z - self.chunk_overlap))
+                    as f64,
+            ) as i32;
+        }
         let position_factor = self.chunk_size - Vector3i::ONE * self.chunk_overlap;
 
         let mut chunks = vec![];

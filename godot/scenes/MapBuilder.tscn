@@ -1,7 +1,6 @@
-[gd_scene load_steps=12 format=3 uid="uid://ct527swuhke66"]
+[gd_scene load_steps=11 format=3 uid="uid://ct527swuhke66"]
 
 [ext_resource type="Script" path="res://src/map_builder.gd" id="1_lqyqi"]
-[ext_resource type="PackedScene" uid="uid://sc48m1urjdvs" path="res://blend/axes.blend" id="2_onn7h"]
 [ext_resource type="Shader" path="res://resources/sky.gdshader" id="2_xbmah"]
 [ext_resource type="Script" path="res://src/environment.gd" id="3_6c7db"]
 [ext_resource type="Script" path="res://src/camera_base.gd" id="3_j1p4m"]
@@ -64,9 +63,6 @@ moon_base_enegry = 1.0
 [node name="Sun" type="DirectionalLight3D" parent="Environment"]
 transform = Transform3D(0.920809, 0, -0.390014, 0.195007, 0.866025, 0.460404, 0.337762, -0.5, 0.797443, 0, 0, 0)
 rotation_order = 4
-
-[node name="axes" parent="Environment" instance=ExtResource("2_onn7h")]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
 
 [node name="Moon" type="DirectionalLight3D" parent="Environment"]
 transform = Transform3D(0.965201, 0, -0.261509, 0.254038, 0.237327, 0.937625, 0.0620631, -0.97143, 0.229068, 0, 0, 0)

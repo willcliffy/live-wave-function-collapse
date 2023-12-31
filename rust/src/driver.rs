@@ -33,8 +33,8 @@ pub struct LWFCDriver {
 #[godot_api]
 impl INode3D for LWFCDriver {
     fn init(node: Base<Node3D>) -> Self {
-        let map_size = Vector3i { x: 30, y: 8, z: 30 };
-        let chunk_size = Vector3i { x: 10, y: 6, z: 10 };
+        let map_size = Vector3i { x: 10, y: 1, z: 10 };
+        let chunk_size = Vector3i { x: 12, y: 2, z: 12 };
         let chunk_overlap = 2;
         let map_parameters = MapParameters::new(map_size, chunk_size, chunk_overlap);
 
@@ -42,7 +42,7 @@ impl INode3D for LWFCDriver {
 
         let _manager_handle = thread::spawn(move || {
             let mut manager = Manager::new(phone_to_main, map_parameters);
-            manager.run()
+            manager.run();
         });
 
         LWFCDriver {

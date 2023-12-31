@@ -136,36 +136,36 @@ impl MapDirector {
         }
 
         // 2. Apply custom constraints
-        match self.apply_constraints(chunk_index) {
-            Ok(mut constraint_changes) => {
-                godot_print!(
-                    "[M/WP {chunk_index}] Applied custom constraints. {} changes",
-                    constraint_changes.len()
-                );
-                changes.append(&mut constraint_changes)
-            }
-            Err(e) => {
-                godot_print!("[M/WP {chunk_index}] Failed to apply custom constraints: {e}",);
-                return Err(e);
-            }
-        }
+        // match self.apply_constraints(chunk_index) {
+        //     Ok(mut constraint_changes) => {
+        //         godot_print!(
+        //             "[M/WP {chunk_index}] Applied custom constraints. {} changes",
+        //             constraint_changes.len()
+        //         );
+        //         changes.append(&mut constraint_changes)
+        //     }
+        //     Err(e) => {
+        //         godot_print!("[M/WP {chunk_index}] Failed to apply custom constraints: {e}",);
+        //         return Err(e);
+        //     }
+        // }
 
         // 3. Propagate in neighboring cells
-        match self.propagate_neighbors(chunk_index) {
-            Ok(mut propagate_changes) => {
-                godot_print!(
-                    "[M/WP {chunk_index}] Propagated from neighboring chunks. {} changes",
-                    propagate_changes.len(),
-                );
-                changes.append(&mut propagate_changes);
-            }
-            Err(e) => {
-                godot_print!(
-                    "[M/WP {chunk_index}] Failed to propagate from neighboring chunks: {e}",
-                );
-                return Err(e);
-            }
-        }
+        // match self.propagate_neighbors(chunk_index) {
+        //     Ok(mut propagate_changes) => {
+        //         godot_print!(
+        //             "[M/WP {chunk_index}] Propagated from neighboring chunks. {} changes",
+        //             propagate_changes.len(),
+        //         );
+        //         changes.append(&mut propagate_changes);
+        //     }
+        //     Err(e) => {
+        //         godot_print!(
+        //             "[M/WP {chunk_index}] Failed to propagate from neighboring chunks: {e}",
+        //         );
+        //         return Err(e);
+        //     }
+        // }
 
         self.set_chunk_state(chunk_index, ChunkState::Ready);
 
