@@ -1,9 +1,7 @@
-use std::cmp::min;
-
 use godot::prelude::*;
 use rand::Rng;
 
-use crate::models::{driver_update::CellChange, prototype::Prototype};
+use crate::models::driver_update::CellChange;
 
 use super::map::Map;
 
@@ -80,7 +78,6 @@ impl Chunk {
         changes
     }
 
-    // Choose a cell contained within this chunk and collapse it
     pub fn collapse_next(&self, map: &mut Map) -> Option<Vec<CellChange>> {
         let cell_position = self.select_lowest_entropy(map)?;
         let cell = map.get_cell_mut(cell_position)?;
@@ -88,55 +85,6 @@ impl Chunk {
         Some(self.propagate(&change, map))
     }
 
-    // No uncapped cells along the edge of the map. No uncapped cells along the top of the chunk
-    // Prototypes marked `"constrain_to": "BOT"` should only appear in cells where y = 0
-    pub fn apply_custom_constraints(&self, map: &mut Map) -> Vec<CellChange> {
-        let map_size = map.size;
-        let chunk_top_y = min(self.position.y + self.size.y, map.size.y) - 1;
-
-        self.change_each_cell(map, |position, map| {
-            let cell = map.get_cell_mut(position)?;
-            let old_entropy = cell.possibilities.len();
-
-            if position.y == 0 {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::DOWN);
-            } else {
-                Prototype::retain_not_constrained(&mut cell.possibilities, "BOT".into());
-            }
-
-            if position.y == chunk_top_y {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::UP);
-            }
-
-            if position.x == 0 {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::LEFT);
-            }
-
-            if position.x == map_size.x - 1 {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::RIGHT);
-            }
-
-            if position.z == 0 {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::FORWARD);
-            }
-
-            if position.z == map_size.z - 1 {
-                Prototype::retain_uncapped(&mut cell.possibilities, Vector3i::BACK);
-            }
-
-            if cell.possibilities.len() != old_entropy {
-                Some(vec![CellChange {
-                    position,
-                    new_protos: cell.possibilities.clone(),
-                }])
-            } else {
-                None
-            }
-        })
-    }
-
-    // Should not be necessary theoretically, but useful in many situations and as part of several
-    //  strategies to maintain stability
     pub fn propagate_all(&self, map: &mut Map) -> Vec<CellChange> {
         self.change_each_cell(map, |position, map| {
             let cell = map.get_cell(position)?;
@@ -189,18 +137,9 @@ impl Chunk {
                     let position = Vector3i { x, y, z };
                     let cell = map.get_cell(position);
                     if let Some(cell) = cell {
-                        let mut entropy = cell.entropy();
+                        let entropy = cell.entropy();
                         if entropy <= 1 || entropy > lowest_entropy {
                             continue;
-                        }
-
-                        // TODO - apply custom entropy rules here
-                        // In the GDScript implementation, I added 1 along the bounding box of the
-                        // chunk, 2 at the top of the chunk, and added y to all cells' entropy
-                        if y == 0 {
-                            entropy += 100;
-                        } else {
-                            //entropy += y as usize;
                         }
 
                         if entropy < lowest_entropy {
@@ -209,8 +148,6 @@ impl Chunk {
                         } else if entropy == lowest_entropy {
                             lowest_entropy_cells.push(position);
                         } else {
-                            // TODO - this is reachable since we added custom entropy rules
-                            // need to think about what to do here.
                             // unreachable!()
                         }
                     }

@@ -116,7 +116,7 @@ impl Map {
             }
         }
 
-        changes.append(&mut next_chunk.apply_custom_constraints(self));
+        //changes.append(&mut next_chunk.apply_custom_constraints(self));
         changes.append(&mut next_chunk.propagate_all(self));
 
         changes.append(&mut next_chunk.propagate_from(neighboring, self));
@@ -141,28 +141,28 @@ fn generate_cells(size: Vector3i, all_protos: &Vec<Prototype>) -> Vec<Vec<Vec<Ce
         for x in 0..size.x {
             let mut row = vec![];
             for z in 0..size.z {
-                let mut cell_protos = all_protos.clone();
+                let cell_protos = all_protos.clone();
 
-                if x == 0 {
-                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::LEFT);
-                } else if x == size.x - 1 {
-                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::RIGHT);
-                }
+                // if x == 0 {
+                //     Prototype::retain_uncapped(&mut cell_protos, Vector3i::LEFT);
+                // } else if x == size.x - 1 {
+                //     Prototype::retain_uncapped(&mut cell_protos, Vector3i::RIGHT);
+                // }
 
-                if y == 0 {
-                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::DOWN);
-                } else {
-                    Prototype::retain_not_constrained(&mut cell_protos, "BOT".into());
-                    if y == size.y - 1 {
-                        Prototype::retain_uncapped(&mut cell_protos, Vector3i::UP);
-                    }
-                }
+                // if y == 0 {
+                //     Prototype::retain_uncapped(&mut cell_protos, Vector3i::DOWN);
+                // } else {
+                //     Prototype::retain_not_constrained(&mut cell_protos, "BOT".into());
+                //     if y == size.y - 1 {
+                //         Prototype::retain_uncapped(&mut cell_protos, Vector3i::UP);
+                //     }
+                // }
 
-                if z == 0 {
-                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::FORWARD);
-                } else if z == size.z - 1 {
-                    Prototype::retain_uncapped(&mut cell_protos, Vector3i::BACK);
-                }
+                // if z == 0 {
+                //     Prototype::retain_uncapped(&mut cell_protos, Vector3i::FORWARD);
+                // } else if z == size.z - 1 {
+                //     Prototype::retain_uncapped(&mut cell_protos, Vector3i::BACK);
+                // }
 
                 let cell = Cell::new(Vector3i { x, y, z }, cell_protos);
                 row.push(cell);
@@ -174,10 +174,25 @@ fn generate_cells(size: Vector3i, all_protos: &Vec<Prototype>) -> Vec<Vec<Vec<Ce
     cells
 }
 
-fn generate_chunks(size: Vector3i, chunk_size: Vector3i, chunk_overlap: i32) -> Vec<Chunk> {
-    let num_x = ceili((size.x / (chunk_size.x - chunk_overlap)) as f64) as i32;
-    let num_y = ceili((size.y / (chunk_size.y - chunk_overlap)) as f64) as i32;
-    let num_z = ceili((size.z / (chunk_size.z - chunk_overlap)) as f64) as i32;
+fn generate_chunks(map_size: Vector3i, chunk_size: Vector3i, chunk_overlap: i32) -> Vec<Chunk> {
+    let num_x = if chunk_size.x <= chunk_overlap {
+        1
+    } else {
+        ceili(((map_size.x + chunk_overlap) / (chunk_size.x - chunk_overlap)) as f64) as i32
+    };
+
+    let num_y = if chunk_size.y <= chunk_overlap {
+        1
+    } else {
+        ceili(((map_size.y + chunk_overlap) / (chunk_size.y - chunk_overlap)) as f64) as i32
+    };
+
+    let num_z = if chunk_size.z <= chunk_overlap {
+        1
+    } else {
+        ceili(((map_size.z + chunk_overlap) / (chunk_size.z - chunk_overlap)) as f64) as i32
+    };
+
     let position_factor = chunk_size - Vector3i::ONE * chunk_overlap;
 
     let mut chunks = vec![];

@@ -139,28 +139,4 @@ impl Prototype {
             .iter()
             .any(|p| self.compatible_with(p.id.clone(), direction))
     }
-
-    pub fn _uncapped(protos: &Vec<Prototype>, direction: Vector3i) -> Vec<Prototype> {
-        protos
-            .iter()
-            .filter(|p| p.compatible_with("p-1".into(), direction))
-            .cloned()
-            .collect()
-    }
-
-    pub fn retain_uncapped(protos: &mut Vec<Prototype>, direction: Vector3i) {
-        protos.retain(|p| p.compatible_with("p-1".into(), direction))
-    }
-
-    pub fn _not_constrained(protos: &Vec<Prototype>, constraint: String) -> Vec<Prototype> {
-        protos
-            .iter()
-            .filter(|p| p.constrain_to != constraint)
-            .cloned()
-            .collect()
-    }
-
-    pub fn retain_not_constrained(protos: &mut Vec<Prototype>, constraint: String) {
-        protos.retain(|p| p.constrain_to != constraint)
-    }
 }

@@ -7,11 +7,20 @@ var cell_matrix: Array = []
 
 var changes_queued: Array = []
 
+const CELL_SIZE = 6
+const MAX_JITTER = 2
+
+
 func _ready():
 	$Area.mesh.size = driver.map_size
 	$Area.position = floor(Vector3(driver.map_size) / 2) - Vector3.ONE * 0.5
 
-	$CameraBase.position += Vector3(driver.map_size.x / 2, 0, driver.map_size.z / 2)
+	$CameraBase.position += Vector3(
+		driver.map_size.x * CELL_SIZE / 2,
+		0,
+		driver.map_size.z * CELL_SIZE / 2
+	)
+
 	for y in range(driver.map_size.y):
 		cell_matrix.append([])
 		for x in range(driver.map_size.x):
@@ -19,7 +28,13 @@ func _ready():
 			for z in range(driver.map_size.z):
 				var cell = cell_scene.instantiate()
 				cell.name = "Cell %d %d %d" % [x, y, z]
-				cell.position = Vector3(x, y, z)
+				var jitter = Vector3(
+					randf_range(-MAX_JITTER, MAX_JITTER),
+					0,
+					randf_range(-MAX_JITTER, MAX_JITTER),
+				)
+				cell.position = CELL_SIZE * Vector3(x, y, z) + jitter
+				cell.get_node("Highlight").mesh.size = CELL_SIZE * Vector3.ONE
 				add_child(cell)
 				cell.owner = self
 				cell_matrix[y][x].append(cell)
@@ -55,4 +70,9 @@ func _on_cell_constrained(changes: Array):
 
 
 func _on_cells_changed(changes):
-	print("got cell change! ", changes)
+	for raw_change in changes:
+		var change = raw_change["CellChangeGodot"]
+		var change_position: Vector3i = change["position"]
+		var change_protos: String = change["new_protos"]
+		changes_queued.append([change_position, change_protos.split(",")])
+

@@ -35,12 +35,8 @@ impl INode3D for LWFCDriver {
             _handle: None,
             send_to_thread: None,
             recv_in_main: None,
-            map_size: Vector3i {
-                x: 30,
-                y: 15,
-                z: 30,
-            },
-            chunk_size: Vector3i { x: 10, y: 6, z: 10 },
+            map_size: Vector3i { x: 15, y: 1, z: 15 },
+            chunk_size: Vector3i { x: 9, y: 1, z: 9 },
             chunk_overlap: 2,
             node,
         }
