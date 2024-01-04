@@ -1,0 +1,132 @@
+[gd_scene load_steps=20 format=3 uid="uid://bypiui5y3d6m3"]
+
+[ext_resource type="Script" path="res://src/map_final.gd" id="1_qlntn"]
+[ext_resource type="Shader" path="res://resources/sky.gdshader" id="2_t2hyf"]
+[ext_resource type="Texture2D" uid="uid://ctewjjjvwmu4i" path="res://resources/stars.png" id="3_u8tdb"]
+[ext_resource type="Script" path="res://src/environment.gd" id="4_epta8"]
+[ext_resource type="Script" path="res://src/camera_base.gd" id="4_ufv21"]
+[ext_resource type="ArrayMesh" uid="uid://ciyy6eewcduxh" path="res://resources/grass.obj" id="5_i6wkq"]
+[ext_resource type="Material" uid="uid://bihurpo4dmg1y" path="res://resources/grass_material.tres" id="6_pj1wd"]
+[ext_resource type="Script" path="res://addons/cliff_scatter/src/scatter_generator.gd" id="8_fk3a1"]
+[ext_resource type="Shader" uid="uid://dytb5fl7l8hfb" path="res://resources/water/water_new.tres" id="9_cxgln"]
+[ext_resource type="Texture2D" uid="uid://hu60u1buud5q" path="res://resources/water/noise1.tres" id="10_wki4l"]
+[ext_resource type="Texture2D" uid="uid://c2gy2nk76maxb" path="res://resources/water/noise2.tres" id="11_mhc2c"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_l5b3w"]
+shader = ExtResource("2_t2hyf")
+shader_parameter/day_top_color = Color(0.227451, 0.27451, 0.513726, 1)
+shader_parameter/day_bottom_color = Color(0.329412, 0.462745, 0.682353, 1)
+shader_parameter/sunset_top_color = Color(0.458824, 0.647059, 0.811765, 1)
+shader_parameter/sunset_bottom_color = Color(0.886275, 0.596078, 0.596078, 1)
+shader_parameter/night_top_color = Color(0, 0, 0, 1)
+shader_parameter/night_bottom_color = Color(0.12549, 0.0941176, 0.156863, 1)
+shader_parameter/horizon_color = Color(0.458824, 0.647059, 0.811765, 1)
+shader_parameter/horizon_blur = 0.05
+shader_parameter/sun_color = Color(10, 8, 1, 1)
+shader_parameter/sun_sunset_color = Color(10, 0, 0, 1)
+shader_parameter/sun_size = 0.2
+shader_parameter/sun_blur = 10.0
+shader_parameter/moon_color = Color(0.878431, 0.862745, 0.623529, 1)
+shader_parameter/moon_size = 0.06
+shader_parameter/moon_blur = 0.1
+shader_parameter/clouds_edge_color = Color(0.82989, 0.785138, 0.879873, 1)
+shader_parameter/clouds_top_color = Color(1, 1, 1, 1)
+shader_parameter/clouds_middle_color = Color(0.878431, 0.87451, 0.956863, 1)
+shader_parameter/clouds_bottom_color = Color(0.829163, 0.875914, 0.951403, 1)
+shader_parameter/clouds_speed = 2.0
+shader_parameter/clouds_direction = 0.2
+shader_parameter/clouds_scale = 1.0
+shader_parameter/clouds_cutoff = 0.3
+shader_parameter/clouds_fuzziness = 0.5
+shader_parameter/clouds_weight = 0.0
+shader_parameter/clouds_blur = 0.25
+shader_parameter/stars_speed = 1.0
+shader_parameter/stars_texture = ExtResource("3_u8tdb")
+shader_parameter/overwritten_time = 0.0
+
+[sub_resource type="Sky" id="Sky_ni0vf"]
+sky_material = SubResource("ShaderMaterial_l5b3w")
+
+[sub_resource type="Environment" id="Environment_ic6rf"]
+background_mode = 2
+sky = SubResource("Sky_ni0vf")
+
+[sub_resource type="MultiMesh" id="MultiMesh_b24b7"]
+transform_format = 1
+mesh = ExtResource("5_i6wkq")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_h68mk"]
+frequency = 1.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hh5v6"]
+render_priority = 0
+shader = ExtResource("9_cxgln")
+shader_parameter/Noise1_Vertex_speed = Vector2(0.02, 0.02)
+shader_parameter/Wave_Height = 0.25
+shader_parameter/ColorParameter = Color(0.227451, 0.27451, 0.513726, 1)
+shader_parameter/Noise1_Fragment_Speed = Vector2(0.02, 0.02)
+shader_parameter/Noise2_Fragment_Speed = Vector2(-0.021, -0.014)
+shader_parameter/Noise1_Vertex = ExtResource("10_wki4l")
+shader_parameter/Noise1_Fragment = ExtResource("10_wki4l")
+shader_parameter/Noise2_Fragment = ExtResource("11_mhc2c")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_86bji"]
+material = SubResource("ShaderMaterial_hh5v6")
+size = Vector2(25, 25)
+subdivide_width = 75
+subdivide_depth = 75
+
+[sub_resource type="MultiMesh" id="MultiMesh_jmud8"]
+transform_format = 1
+instance_count = 100
+mesh = SubResource("PlaneMesh_86bji")
+buffer = PackedFloat32Array(1, 0, 0, -125, 0, 1, 0, -0.45, 0, 0, 1, -125, 1, 0, 0, -125, 0, 1, 0, -0.45, 0, 0, 1, -100, 1, 0, 0, -125, 0, 1, 0, -0.45, 0, 0, 1, -75, 1, 0, 0, -125, 0, 1, 0, -0.45, 0, 0, 1, -50, 1, 0, 0, -125, 0, 1, 0, -0.45, 0, 0, 1, -25, 1, 0, 0, -125, 0, 1, 0, -0.45, 0, 0, 1, 0, 1, 0, 0, -125, 0, 1, 0, -0.45, 0, 0, 1, 25, 1, 0, 0, -125, 0, 1, 0, -0.45, 0, 0, 1, 50, 1, 0, 0, -125, 0, 1, 0, -0.45, 0, 0, 1, 75, 1, 0, 0, -125, 0, 1, 0, -0.45, 0, 0, 1, 100, 1, 0, 0, -100, 0, 1, 0, -0.45, 0, 0, 1, -125, 1, 0, 0, -100, 0, 1, 0, -0.45, 0, 0, 1, -100, 1, 0, 0, -100, 0, 1, 0, -0.45, 0, 0, 1, -75, 1, 0, 0, -100, 0, 1, 0, -0.45, 0, 0, 1, -50, 1, 0, 0, -100, 0, 1, 0, -0.45, 0, 0, 1, -25, 1, 0, 0, -100, 0, 1, 0, -0.45, 0, 0, 1, 0, 1, 0, 0, -100, 0, 1, 0, -0.45, 0, 0, 1, 25, 1, 0, 0, -100, 0, 1, 0, -0.45, 0, 0, 1, 50, 1, 0, 0, -100, 0, 1, 0, -0.45, 0, 0, 1, 75, 1, 0, 0, -100, 0, 1, 0, -0.45, 0, 0, 1, 100, 1, 0, 0, -75, 0, 1, 0, -0.45, 0, 0, 1, -125, 1, 0, 0, -75, 0, 1, 0, -0.45, 0, 0, 1, -100, 1, 0, 0, -75, 0, 1, 0, -0.45, 0, 0, 1, -75, 1, 0, 0, -75, 0, 1, 0, -0.45, 0, 0, 1, -50, 1, 0, 0, -75, 0, 1, 0, -0.45, 0, 0, 1, -25, 1, 0, 0, -75, 0, 1, 0, -0.45, 0, 0, 1, 0, 1, 0, 0, -75, 0, 1, 0, -0.45, 0, 0, 1, 25, 1, 0, 0, -75, 0, 1, 0, -0.45, 0, 0, 1, 50, 1, 0, 0, -75, 0, 1, 0, -0.45, 0, 0, 1, 75, 1, 0, 0, -75, 0, 1, 0, -0.45, 0, 0, 1, 100, 1, 0, 0, -50, 0, 1, 0, -0.45, 0, 0, 1, -125, 1, 0, 0, -50, 0, 1, 0, -0.45, 0, 0, 1, -100, 1, 0, 0, -50, 0, 1, 0, -0.45, 0, 0, 1, -75, 1, 0, 0, -50, 0, 1, 0, -0.45, 0, 0, 1, -50, 1, 0, 0, -50, 0, 1, 0, -0.45, 0, 0, 1, -25, 1, 0, 0, -50, 0, 1, 0, -0.45, 0, 0, 1, 0, 1, 0, 0, -50, 0, 1, 0, -0.45, 0, 0, 1, 25, 1, 0, 0, -50, 0, 1, 0, -0.45, 0, 0, 1, 50, 1, 0, 0, -50, 0, 1, 0, -0.45, 0, 0, 1, 75, 1, 0, 0, -50, 0, 1, 0, -0.45, 0, 0, 1, 100, 1, 0, 0, -25, 0, 1, 0, -0.45, 0, 0, 1, -125, 1, 0, 0, -25, 0, 1, 0, -0.45, 0, 0, 1, -100, 1, 0, 0, -25, 0, 1, 0, -0.45, 0, 0, 1, -75, 1, 0, 0, -25, 0, 1, 0, -0.45, 0, 0, 1, -50, 1, 0, 0, -25, 0, 1, 0, -0.45, 0, 0, 1, -25, 1, 0, 0, -25, 0, 1, 0, -0.45, 0, 0, 1, 0, 1, 0, 0, -25, 0, 1, 0, -0.45, 0, 0, 1, 25, 1, 0, 0, -25, 0, 1, 0, -0.45, 0, 0, 1, 50, 1, 0, 0, -25, 0, 1, 0, -0.45, 0, 0, 1, 75, 1, 0, 0, -25, 0, 1, 0, -0.45, 0, 0, 1, 100, 1, 0, 0, 0, 0, 1, 0, -0.45, 0, 0, 1, -125, 1, 0, 0, 0, 0, 1, 0, -0.45, 0, 0, 1, -100, 1, 0, 0, 0, 0, 1, 0, -0.45, 0, 0, 1, -75, 1, 0, 0, 0, 0, 1, 0, -0.45, 0, 0, 1, -50, 1, 0, 0, 0, 0, 1, 0, -0.45, 0, 0, 1, -25, 1, 0, 0, 0, 0, 1, 0, -0.45, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, -0.45, 0, 0, 1, 25, 1, 0, 0, 0, 0, 1, 0, -0.45, 0, 0, 1, 50, 1, 0, 0, 0, 0, 1, 0, -0.45, 0, 0, 1, 75, 1, 0, 0, 0, 0, 1, 0, -0.45, 0, 0, 1, 100, 1, 0, 0, 25, 0, 1, 0, -0.45, 0, 0, 1, -125, 1, 0, 0, 25, 0, 1, 0, -0.45, 0, 0, 1, -100, 1, 0, 0, 25, 0, 1, 0, -0.45, 0, 0, 1, -75, 1, 0, 0, 25, 0, 1, 0, -0.45, 0, 0, 1, -50, 1, 0, 0, 25, 0, 1, 0, -0.45, 0, 0, 1, -25, 1, 0, 0, 25, 0, 1, 0, -0.45, 0, 0, 1, 0, 1, 0, 0, 25, 0, 1, 0, -0.45, 0, 0, 1, 25, 1, 0, 0, 25, 0, 1, 0, -0.45, 0, 0, 1, 50, 1, 0, 0, 25, 0, 1, 0, -0.45, 0, 0, 1, 75, 1, 0, 0, 25, 0, 1, 0, -0.45, 0, 0, 1, 100, 1, 0, 0, 50, 0, 1, 0, -0.45, 0, 0, 1, -125, 1, 0, 0, 50, 0, 1, 0, -0.45, 0, 0, 1, -100, 1, 0, 0, 50, 0, 1, 0, -0.45, 0, 0, 1, -75, 1, 0, 0, 50, 0, 1, 0, -0.45, 0, 0, 1, -50, 1, 0, 0, 50, 0, 1, 0, -0.45, 0, 0, 1, -25, 1, 0, 0, 50, 0, 1, 0, -0.45, 0, 0, 1, 0, 1, 0, 0, 50, 0, 1, 0, -0.45, 0, 0, 1, 25, 1, 0, 0, 50, 0, 1, 0, -0.45, 0, 0, 1, 50, 1, 0, 0, 50, 0, 1, 0, -0.45, 0, 0, 1, 75, 1, 0, 0, 50, 0, 1, 0, -0.45, 0, 0, 1, 100, 1, 0, 0, 75, 0, 1, 0, -0.45, 0, 0, 1, -125, 1, 0, 0, 75, 0, 1, 0, -0.45, 0, 0, 1, -100, 1, 0, 0, 75, 0, 1, 0, -0.45, 0, 0, 1, -75, 1, 0, 0, 75, 0, 1, 0, -0.45, 0, 0, 1, -50, 1, 0, 0, 75, 0, 1, 0, -0.45, 0, 0, 1, -25, 1, 0, 0, 75, 0, 1, 0, -0.45, 0, 0, 1, 0, 1, 0, 0, 75, 0, 1, 0, -0.45, 0, 0, 1, 25, 1, 0, 0, 75, 0, 1, 0, -0.45, 0, 0, 1, 50, 1, 0, 0, 75, 0, 1, 0, -0.45, 0, 0, 1, 75, 1, 0, 0, 75, 0, 1, 0, -0.45, 0, 0, 1, 100, 1, 0, 0, 100, 0, 1, 0, -0.45, 0, 0, 1, -125, 1, 0, 0, 100, 0, 1, 0, -0.45, 0, 0, 1, -100, 1, 0, 0, 100, 0, 1, 0, -0.45, 0, 0, 1, -75, 1, 0, 0, 100, 0, 1, 0, -0.45, 0, 0, 1, -50, 1, 0, 0, 100, 0, 1, 0, -0.45, 0, 0, 1, -25, 1, 0, 0, 100, 0, 1, 0, -0.45, 0, 0, 1, 0, 1, 0, 0, 100, 0, 1, 0, -0.45, 0, 0, 1, 25, 1, 0, 0, 100, 0, 1, 0, -0.45, 0, 0, 1, 50, 1, 0, 0, 100, 0, 1, 0, -0.45, 0, 0, 1, 75, 1, 0, 0, 100, 0, 1, 0, -0.45, 0, 0, 1, 100)
+
+[node name="MapFinal" type="Node3D"]
+process_mode = 1
+script = ExtResource("1_qlntn")
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_ic6rf")
+script = ExtResource("4_epta8")
+day_time = 11.6535
+time_scale = 0.1
+sun_base_enegry = 2.0
+moon_base_enegry = 1.0
+
+[node name="Sun" type="DirectionalLight3D" parent="Environment"]
+transform = Transform3D(0.920894, 0, -0.389813, 0.38821, 0.0905891, 0.917107, 0.0353128, -0.995888, 0.0834229, 0, 0, 0)
+rotation_order = 4
+light_energy = 2.0
+
+[node name="Moon" type="DirectionalLight3D" parent="Environment"]
+transform = Transform3D(0.998614, 0, 0.0526251, -0.0208379, 0.918264, 0.39542, -0.0483237, -0.395969, 0.916991, 0, 0, 0)
+rotation_order = 4
+
+[node name="CameraBase" type="Node3D" parent="."]
+transform = Transform3D(0.707107, -0.298836, 0.640856, 0, 0.906307, 0.422618, -0.707107, -0.298836, 0.640856, 2.08165e-12, 2.08165e-12, 2.08165e-12)
+script = ExtResource("4_ufv21")
+
+[node name="Camera" type="Camera3D" parent="CameraBase"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 15)
+
+[node name="Modules" type="Node3D" parent="."]
+
+[node name="CliffScatter" type="MultiMeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -1)
+material_override = ExtResource("6_pj1wd")
+multimesh = SubResource("MultiMesh_b24b7")
+script = ExtResource("8_fk3a1")
+scatter_mesh = ExtResource("5_i6wkq")
+base_placement_noise = SubResource("FastNoiseLite_h68mk")
+base_placement_noise_threshold = 0.1
+shape_size = Vector3(22, 7, 22)
+samples_per_meter = 16
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.53397, 1.40187, 4.93917)
+light_bake_mode = 0
+omni_attenuation = 0.277392
+
+[node name="Ocean" type="MultiMeshInstance3D" parent="."]
+multimesh = SubResource("MultiMesh_jmud8")

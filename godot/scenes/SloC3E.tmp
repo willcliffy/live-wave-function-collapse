@@ -1,0 +1,26 @@
+[gd_scene load_steps=6 format=3 uid="uid://c18c4wr5vufng"]
+
+[ext_resource type="Script" path="res://src/cell.gd" id="1_hc50x"]
+[ext_resource type="Material" uid="uid://bm8070r1bydcn" path="res://resources/cell_highlight_material.tres" id="2_e0bda"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8txte"]
+transparency = 1
+blend_mode = 1
+albedo_color = Color(0.823529, 0.4, 0, 0.501961)
+
+[sub_resource type="BoxMesh" id="BoxMesh_focph"]
+material = SubResource("StandardMaterial3D_8txte")
+
+[sub_resource type="BoxMesh" id="BoxMesh_ijroo"]
+
+[node name="Cell" type="Node3D"]
+script = ExtResource("1_hc50x")
+
+[node name="InvalidHighlight" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("BoxMesh_focph")
+skeleton = NodePath("")
+
+[node name="Highlight" type="MeshInstance3D" parent="."]
+material_override = ExtResource("2_e0bda")
+mesh = SubResource("BoxMesh_ijroo")

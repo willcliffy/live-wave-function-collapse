@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://b2bdmb4lv56ig"]
+
+[ext_resource type="Shader" path="res://resources/ground.gdshader" id="1_sujyc"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_sujyc")
+shader_parameter/threshold = 0.8
+shader_parameter/smoothing = 0.073
+shader_parameter/flat_color = Color(0, 0.411765, 0, 1)
+shader_parameter/steep_color = Color(0.317647, 0.317647, 0.317647, 1)

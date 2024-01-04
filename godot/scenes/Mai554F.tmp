@@ -1,0 +1,139 @@
+[gd_scene load_steps=6 format=3 uid="uid://bhq4ww1a6q37r"]
+
+[ext_resource type="PackedScene" uid="uid://dkj8wu5cotccu" path="res://scenes/Map.tscn" id="1_4d4x7"]
+[ext_resource type="Script" path="res://src/main.gd" id="1_47xb3"]
+[ext_resource type="PackedScene" uid="uid://b0lgp1ecd4rfu" path="res://scenes/Controls.tscn" id="2_uu8hr"]
+
+[sub_resource type="SystemFont" id="SystemFont_ob788"]
+
+[sub_resource type="Theme" id="Theme_xjb7h"]
+default_font = SubResource("SystemFont_ob788")
+default_font_size = 18
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 15.0
+offset_top = -5.0
+offset_right = 15.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_47xb3")
+
+[node name="Controls" type="VBoxContainer" parent="."]
+visible = false
+custom_minimum_size = Vector2(475, 2.08165e-12)
+layout_mode = 2
+offset_left = -961.5
+offset_top = -540.0
+offset_right = -486.5
+offset_bottom = -540.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="ToggleMargins" type="MarginContainer" parent="Controls"]
+visible = false
+custom_minimum_size = Vector2(350, 100)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+
+[node name="ButtonsMargins" type="MarginContainer" parent="Controls"]
+visible = false
+custom_minimum_size = Vector2(450, 300)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+
+[node name="ConsoleMargins" type="MarginContainer" parent="Controls"]
+visible = false
+custom_minimum_size = Vector2(450, 250)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="ConsoleBackground" type="ColorRect" parent="Controls/ConsoleMargins"]
+custom_minimum_size = Vector2(350, 350)
+layout_mode = 2
+size_flags_vertical = 10
+color = Color(0, 0, 0, 1)
+
+[node name="Console" type="RichTextLabel" parent="Controls/ConsoleMargins/ConsoleBackground"]
+custom_minimum_size = Vector2(0, 250)
+layout_mode = 2
+offset_right = 600.0
+offset_bottom = 350.0
+theme = SubResource("Theme_xjb7h")
+text = "(Logs coming soon)"
+
+[node name="ColorRect" type="ColorRect" parent="Controls"]
+visible = false
+custom_minimum_size = Vector2(475, 475)
+layout_mode = 2
+color = Color(0.447059, 0.447059, 0.447059, 1)
+
+[node name="Container" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Controls" parent="Container" instance=ExtResource("2_uu8hr")]
+layout_mode = 2
+
+[node name="Map" parent="Container" instance=ExtResource("1_4d4x7")]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="Options" type="TabContainer" parent="Container"]
+custom_minimum_size = Vector2(360, 2.08165e-12)
+layout_mode = 2
+
+[node name="Proto Selector" type="ScrollContainer" parent="Container/Options"]
+clip_contents = false
+custom_minimum_size = Vector2(256, 2.08165e-12)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/Options/Proto Selector"]
+custom_minimum_size = Vector2(360, 2.08165e-12)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 512
+
+[node name="History" type="ScrollContainer" parent="Container/Options"]
+visible = false
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/Options/History"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/Options/History/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 2
+
+[node name="Undo" type="Button" parent="Container/Options/History/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "<  undo"
+
+[node name="Redo" type="Button" parent="Container/Options/History/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "redo  >"
+
+[connection signal="apply_custom_constraints" from="Container/Controls" to="Container/Map" method="_on_apply_custom_constraints_pressed"]
+[connection signal="auto_collapse_toggled" from="Container/Controls" to="Container/Map" method="set_auto_collapse"]
+[connection signal="show_axes_toggled" from="Container/Controls" to="Container/Map" method="toggle_axes"]
+[connection signal="size_set" from="Container/Controls" to="Container/Map" method="generate_cells"]
+[connection signal="pressed" from="Container/Options/History/VBoxContainer/HBoxContainer/Undo" to="Container/Map" method="_on_undo_pressed"]
